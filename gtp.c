@@ -317,18 +317,21 @@ gtp_decode_color(char *s, int *color)
   if (sscanf(s, "%6s%n", color_string, &n) != 1)
     return 0;
 
-  for (i = 0; i < (int) strlen(color_string); i++)
+  for (i = 0; i < (int) strlen(color_string); i++) {
     color_string[i] = tolower((int) color_string[i]);
+    
+	}
 
   if (strcmp(color_string, "b") == 0
-      || strcmp(color_string, "black") == 0)
+      || strcmp(color_string, "black") == 0) {
+      
     *color = BLACK;
-  else if (strcmp(color_string, "w") == 0
-	   || strcmp(color_string, "white") == 0)
+  }else if (strcmp(color_string, "w") == 0
+	   || strcmp(color_string, "white") == 0){
     *color = WHITE;
-  else
+  }else{
     return 0;
-  
+  }
   return n;
 }
 
@@ -377,7 +380,6 @@ gtp_decode_move(char *s, int *color, int *i, int *j)
   int k;
 
   assert(gtp_boardsize > 0);
-
   n1 = gtp_decode_color(s, color);
   if (n1 == 0)
     return 0;

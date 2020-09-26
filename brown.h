@@ -67,6 +67,7 @@ void set_final_status(int i, int j, int status);
 int valid_fixed_handicap(int handicap);
 void place_fixed_handicap(int handicap);
 void place_free_handicap(int handicap);
+int askGGNU();
 
 /*
  * Local Variables:

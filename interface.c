@@ -1,7 +1,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\
  * This is Brown, a simple go program.                           *
  *                                                               *
- * Copyright 2003 and 2004 by Gunnar Farnebäck.                  *
+ * Copyright 2003 and 2004 by Gunnar Farnebï¿½ck.                  *
  *                                                               *
  * Permission is hereby granted, free of charge, to any person   *
  * obtaining a copy of this file gtp.c, to deal in the Software  *

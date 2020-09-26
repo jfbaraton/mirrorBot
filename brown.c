@@ -44,6 +44,7 @@
  */
 int board_size = 6;
 int current_move_num = 6;
+int GNU_FIRST_MOVE = 0;
 float komi = -3.14;
 
 /* Board represented by a 1D array. The first board_size*board_size
@@ -89,10 +90,9 @@ init_brown()
    * stones on the board.
    */
   clear_board();
-  for (k = 0; k < 20; k++) {
+  for (k = 0; k < 2; k++) {
     int color = rand() % 2 ? BLACK : WHITE;
     generate_move(&i, &j, color);
-	current_move_num--;
     play_move(i, j, color);
   }
 }
@@ -103,6 +103,8 @@ clear_board()
   memset(board, 0, sizeof(board));
   memset(game_moves, 0, sizeof(game_moves));
   current_move_num = 0;
+  GNU_FIRST_MOVE = 0;
+  gtp_printf("clear_board\n");
 }
 
 int
@@ -286,11 +288,11 @@ void play_move(int i, int j, int color)
   ko_i = -1;
   ko_j = -1;
 
+  game_moves[current_move_num++] = pos;
   /* Nothing more happens if the move was a pass. */
   if (pass_move(i, j))
     return;
 
-  game_moves[current_move_num++] = pos;
   /* If the move is a suicide we only need to remove the adjacent
    * friendly stones.
    */
@@ -375,6 +377,7 @@ void generate_move(int *i, int *j, int color)
   int ai, aj;
   int previ, prevj;
   int k;
+  int GNUi, GNUj;
 
   memset(moves, 0, sizeof(moves));
   for (ai = 0; ai < board_size; ai++)
@@ -408,21 +411,28 @@ void generate_move(int *i, int *j, int color)
    * distribution.)
    */
   if (num_moves > 0) {
+	//askGGNU(&GNUi,&GNUj);
 	if(current_move_num == 0) {
 		move = POS(9,9);
+		GNU_FIRST_MOVE = 0;
 	} else {
 		previ = I(game_moves[current_move_num-1]);
 		prevj = J(game_moves[current_move_num-1]);
 		previ = board_size-1-previ;
 		prevj = board_size-1-prevj;
-		if (legal_move(previ, prevj, color)
+		if (GNU_FIRST_MOVE == 0 && legal_move(previ, prevj, color)
 			&& !suicide(previ, prevj, color)){
 			move = POS(previ,prevj);
 		} else {
-			move = moves[rand() % num_moves];
+			if(GNU_FIRST_MOVE == 0){
+				
+				gtp_printf("OK end of the mirror, GNU takes over\n");
+				GNU_FIRST_MOVE=current_move_num;
+			}
+			askGGNU(&GNUi,&GNUj);
+			move = POS(GNUi,GNUj);
 		}
 	}
-	game_moves[current_move_num++] = move;
     *i = I(move);
     *j = J(move);
   }
@@ -591,11 +601,129 @@ place_free_handicap(int handicap)
   
   for (k = 0; k < handicap; k++) {
     generate_move(&i, &j, BLACK);
-	current_move_num--;
     play_move(i, j, BLACK);
   }
 }
 
+//strcat
+//printf "komi 6.5\nboardsize 19\nclear_board\nplay B D4\nplay W Q16\nplay B D17\nplay W Q3\nplay B R5\nplay W C15\ngenmove B\n" | /home/jeff/Documents/go/gnugo/interface/gnugo --mode gtp --quiet | grep "^= [a-zA-Z]" | cat
+
+//printf "komi 6.5\nboardsize 19\nclear_board\nplay B D4\nplay W Q16\nplay B D17\nplay W Q3\nplay B R5\nplay W C15\ngenmove B\nquit\n" | /home/jeff/Documents/go/gnugo/interface/gnugo --mode gtp --quiet | grep "^= [a-zA-Z]" | cat
+
+void getGNUcmd(char *s){
+	int cpt=0;
+	
+	int color = BLACK;
+	int move;
+	int i;
+	int j;
+	int ri;
+	int rj;
+	
+	char str1[5000] = "B ";
+	char komistr[15] = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0" ;
+	sprintf(komistr,"komi %3.1f\\n",komi);
+	char boardsizestr[16] = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0" ;
+	sprintf(boardsizestr,"boardsize %i\\n",board_size);
+	//char cmd[5000] = "komi 6.5\\nboardsize 19\\nclear_board\\nplay B D4\\nplay W Q16\\nplay B D17\\nplay W Q3\\nplay B R5\\ngenmove W\\nquit\\n\" | /home/jeff/Documents/go/gnugo/interface/gnugo --mode gtp --quiet | grep \"^= [a-zA-Z]\" | cat";
+	char gamemovesSTR[5000] = "play B D4\\nplay W Q16\\nplay B D17\\nplay W Q3\\nplay B R5\\n";
+	char cmd[5000] = "genmove W\\nquit\\n\" | /home/jeff/Documents/go/gnugo/interface/gnugo --mode gtp --quiet | grep \"^= [a-zA-Z]\" | cat";
+
+	strcat(s,komistr);
+	strcat(s,boardsizestr);
+	strcat(s,"clear_board\\n");
+	for(cpt=0;cpt<current_move_num;cpt++){
+		move = game_moves[cpt];
+		i = I(move);
+		j = J(move);
+		if(!pass_move(i,j)) {
+			
+			
+			/*if (k > 0)
+			  gtp_printf(" ");
+			if (i == -1 && j == -1)
+			  gtp_printf("PASS");
+			else*/ 
+			if (i < 0 || i >= board_size
+				 || j < 0 || j >= board_size) {
+			  gtp_printf("??");
+			} else {
+				/*if (vertex_transform_output_hook != NULL) {
+					(*vertex_transform_output_hook)(i, j, &ri, &rj);
+				} else {*/
+					ri = i;
+					rj = j;
+				//}
+				strcat(s,"play ");
+				if(color == BLACK){
+					strcat(s,"B ");
+				} else {
+					strcat(s,"W ");
+				}
+				char oneMove[15] = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0" ;
+				sprintf(oneMove,"%c%d", 'A' + rj + (rj >= 8), board_size - ri);
+			  
+				strcat(s,oneMove);
+				strcat(s,"\\n");
+			}
+		}
+		color = OTHER_COLOR(color);
+	}
+	//strcat(s,gamemovesSTR);
+	strcat(s,cmd);
+}
+
+int askGGNU() {
+	FILE *fp;
+	int status;
+	int color = EMPTY;
+	int i;
+	int j;
+	int PATH_MAX = 200;
+	char path[PATH_MAX];
+	char path2[PATH_MAX];
+	char str1[5000] = "B ";
+	char cmd[5000] = "printf \"";
+	getGNUcmd(cmd);
+
+//    :2
+	
+	
+	//fp = popen("printf \"komi 6.5\\nboardsize 19\\nclear_board\\nplay B D4\\nplay W Q16\\nplay B D17\\nplay W Q3\\nplay B R5\\ngenmove W\\nquit\\n\" | /home/jeff/Documents/go/gnugo/interface/gnugo --mode gtp --quiet | grep \"^= [a-zA-Z]\" | cat", "r");
+	
+	//gtp_printf("\nREF 'printf \"komi 6.5\\nboardsize 19\\nclear_board\\nplay B D4\\nplay W Q16\\nplay B D17\\nplay W Q3\\nplay B R5\\ngenmove W\\nquit\\n\" | /home/jeff/Documents/go/gnugo/interface/gnugo --mode gtp --quiet | grep \"^= [a-zA-Z]\" | cat'");
+	gtp_printf("\ncmd '%s'", cmd);
+	fp = popen(cmd, "r");
+	if (fp == NULL)
+		/* Handle error */;
+
+
+	while (fgets(path, PATH_MAX, fp) != NULL) {
+		//printf("%s", path);
+		//gtp_printf("coucou %s", path);
+		strncpy (path2, path + 2, strlen(path)-2);
+		//gtp_printf("coucou-2 '%s'", path2);
+		strcat(str1,path2);
+		gtp_printf("coucou-3 '%s'", str1);
+		gtp_decode_move(str1, &color, &i, &j);
+		//gtp_printf("couc %i %i %i", color, i, j);
+	}
+	/*if (!legal_move(i, j, color))
+		return gtp_failure("illegal move");
+*/
+	//play_move(i, j, color);
+
+	status = pclose(fp);
+	if (status == -1) {
+		/* Error reported by pclose() */
+		
+	} else {
+		/* Use macros described under wait() to inspect `status' in order
+		   to determine success/failure of command executed by popen() */
+		return 0;
+	}
+	return 1;
+}
 
 /*
  * Local Variables:
