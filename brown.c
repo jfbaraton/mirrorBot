@@ -715,6 +715,13 @@ int askGGNU(int *i, int *j) {
 		//gtp_printf("coucou %s", path);
 		strncpy (path2, path + 2, strlen(path)-2);
 		//gtp_printf("coucou-2 '%s'", path2);
+		if (strcmp(path2, "resign") || strcmp(path2, "pass")){
+			//gtp_success(path2);
+			//gtp_success(path2);
+			*i = -1;
+			*j = -1;
+			return 0;
+		}
 		strcat(str1,path2);
 		//gtp_printf("coucou-3 '%s'", str1);
 		gtp_decode_move(str1, &color, i, j);
