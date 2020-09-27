@@ -56,6 +56,7 @@ extern int board_size;
 void init_brown(void);
 void clear_board(void);
 int board_empty(void);
+void undo(void);
 int get_board(int i, int j);
 int get_string(int i, int j, int *stonei, int *stonej);
 int legal_move(int i, int j, int color);
@@ -68,7 +69,7 @@ int valid_fixed_handicap(int handicap);
 void place_fixed_handicap(int handicap);
 void place_free_handicap(int handicap);
 int askGGNU();
-
+void getGNUcmd(char *s, int genmove_color);
 /*
  * Local Variables:
  * tab-width: 8

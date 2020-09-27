@@ -55,6 +55,7 @@ static int gtp_play(char *s);
 static int gtp_undo(char *s);
 static int gtp_genmove(char *s);
 static int gtp_final_score(char *s);
+static int gtp_time_left(char *s);
 static int gtp_final_status_list(char *s);
 static int gtp_showboard(char *s);
 
@@ -77,6 +78,8 @@ static struct gtp_command commands[] = {
   {"genmove",             gtp_genmove},
   {"final_score",         gtp_final_score},
   {"final_status_list",   gtp_final_status_list},
+  {"time_left",   		  gtp_time_left},
+  {"time_settings",   	  gtp_time_left},
   {"showboard",        	  gtp_showboard},
   {NULL,                  NULL}
 };
@@ -305,6 +308,12 @@ static int
 gtp_undo(char *s)
 {
 	undo();
+    return gtp_success("");
+}
+
+static int
+gtp_time_left(char *s)
+{
     return gtp_success("");
 }
 
