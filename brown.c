@@ -91,6 +91,8 @@ init_brown()
    */
   clear_board();
   for (k = 0; k < 2; k++) {
+	  
+	//gtp_printf("init_brown %i\n",current_move_num);
     int color = rand() % 2 ? BLACK : WHITE;
     generate_move(&i, &j, color);
     play_move(i, j, color);
@@ -104,7 +106,7 @@ clear_board()
   memset(game_moves, 0, sizeof(game_moves));
   current_move_num = 0;
   GNU_FIRST_MOVE = 0;
-  gtp_printf("clear_board\n");
+//  gtp_printf("clear_board\n");
 }
 
 int
@@ -287,11 +289,12 @@ void play_move(int i, int j, int color)
   /* Reset the ko point. */
   ko_i = -1;
   ko_j = -1;
-
+//  gtp_printf("play_move %i i=%i j=%i\n",current_move_num,i,j);
   game_moves[current_move_num++] = pos;
   /* Nothing more happens if the move was a pass. */
   if (pass_move(i, j))
     return;
+//  gtp_printf("play_move not pass");
 
   /* If the move is a suicide we only need to remove the adjacent
    * friendly stones.
@@ -307,6 +310,7 @@ void play_move(int i, int j, int color)
     return;
   }
 
+//  gtp_printf("play_move not suicide");
   /* Not suicide. Remove captured opponent strings. */
   for (k = 0; k < 4; k++) {
     int ai = i + deltai[k];
@@ -343,6 +347,7 @@ void play_move(int i, int j, int color)
       next_stone[pos] = tmp;
     }
   }
+//  gtp_printf("play_move check ko");
 
   /* If we have captured exactly one stone and the new string is a
    * single stone it may have been a ko capture.
@@ -426,15 +431,21 @@ void generate_move(int *i, int *j, int color)
 		} else {
 			if(GNU_FIRST_MOVE == 0){
 				
-				gtp_printf("OK end of the mirror, GNU takes over\n");
+				//gtp_printf("OK end of the mirror, ");
+				//gtp_printf("GNU takes over %i \n",current_move_num);
 				GNU_FIRST_MOVE=current_move_num;
 			}
 			askGGNU(&GNUi,&GNUj);
+			
+			//gtp_printf("\ncGENAAA %i %i %i\n", color, GNUi, GNUj);
 			move = POS(GNUi,GNUj);
 		}
 	}
     *i = I(move);
     *j = J(move);
+    
+    
+	//gtp_printf("\ncGENBBB %i %i %i\n", color, i, j);
   }
   else {
     /* But pass if no move was considered. */
@@ -646,7 +657,9 @@ void getGNUcmd(char *s){
 			else*/ 
 			if (i < 0 || i >= board_size
 				 || j < 0 || j >= board_size) {
-			  gtp_printf("??");
+			  //gtp_printf("??");
+			  color = OTHER_COLOR(color);
+			  color = OTHER_COLOR(color);
 			} else {
 				/*if (vertex_transform_output_hook != NULL) {
 					(*vertex_transform_output_hook)(i, j, &ri, &rj);
@@ -655,6 +668,7 @@ void getGNUcmd(char *s){
 					rj = j;
 				//}
 				strcat(s,"play ");
+				// TODO read the color from the board? what if captures happened?
 				if(color == BLACK){
 					strcat(s,"B ");
 				} else {
@@ -673,12 +687,10 @@ void getGNUcmd(char *s){
 	strcat(s,cmd);
 }
 
-int askGGNU() {
+int askGGNU(int *i, int *j) {
 	FILE *fp;
 	int status;
 	int color = EMPTY;
-	int i;
-	int j;
 	int PATH_MAX = 200;
 	char path[PATH_MAX];
 	char path2[PATH_MAX];
@@ -692,21 +704,21 @@ int askGGNU() {
 	//fp = popen("printf \"komi 6.5\\nboardsize 19\\nclear_board\\nplay B D4\\nplay W Q16\\nplay B D17\\nplay W Q3\\nplay B R5\\ngenmove W\\nquit\\n\" | /home/jeff/Documents/go/gnugo/interface/gnugo --mode gtp --quiet | grep \"^= [a-zA-Z]\" | cat", "r");
 	
 	//gtp_printf("\nREF 'printf \"komi 6.5\\nboardsize 19\\nclear_board\\nplay B D4\\nplay W Q16\\nplay B D17\\nplay W Q3\\nplay B R5\\ngenmove W\\nquit\\n\" | /home/jeff/Documents/go/gnugo/interface/gnugo --mode gtp --quiet | grep \"^= [a-zA-Z]\" | cat'");
-	gtp_printf("\ncmd '%s'", cmd);
+	//gtp_printf("\ncmd '%s'\n", cmd);
 	fp = popen(cmd, "r");
 	if (fp == NULL)
 		/* Handle error */;
 
 
 	while (fgets(path, PATH_MAX, fp) != NULL) {
-		//printf("%s", path);
+		//printf("answers %s", path);
 		//gtp_printf("coucou %s", path);
 		strncpy (path2, path + 2, strlen(path)-2);
 		//gtp_printf("coucou-2 '%s'", path2);
 		strcat(str1,path2);
-		gtp_printf("coucou-3 '%s'", str1);
-		gtp_decode_move(str1, &color, &i, &j);
-		//gtp_printf("couc %i %i %i", color, i, j);
+		//gtp_printf("coucou-3 '%s'", str1);
+		gtp_decode_move(str1, &color, i, j);
+		//gtp_printf("\ncouc %i %i %i\n", color, *i, *j);
 	}
 	/*if (!legal_move(i, j, color))
 		return gtp_failure("illegal move");
