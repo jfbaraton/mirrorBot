@@ -43,7 +43,8 @@
  * and komi -3.14.
  */
 int board_size = 6;
-int current_move_num = 6;
+int current_handicap = 0;
+int current_move_num = 0;
 int GNU_FIRST_MOVE = 0;
 float komi = -3.14;
 
@@ -53,6 +54,7 @@ float komi = -3.14;
  */
 static int board[MAX_BOARD * MAX_BOARD];
 static int game_moves[10*MAX_BOARD * MAX_BOARD];
+static int game_moves_color[10*MAX_BOARD * MAX_BOARD];
 
 /* Stones are linked together in a circular list for each string. */
 static int next_stone[MAX_BOARD * MAX_BOARD];
@@ -104,9 +106,37 @@ clear_board()
 {
   memset(board, 0, sizeof(board));
   memset(game_moves, 0, sizeof(game_moves));
+  memset(game_moves_color, 0, sizeof(game_moves));
   current_move_num = 0;
   GNU_FIRST_MOVE = 0;
 //  gtp_printf("clear_board\n");
+}
+
+void undo(){
+	
+	char before[5000] = "printf \"";
+	char after[5000] = "printf \"";
+	getGNUcmd(before,BLACK);
+	//gtp_printf("undo BEFORE %i %s\n",current_move_num,before);
+	if(current_move_num>0) {
+		int new_last_move = current_move_num-1;
+		current_move_num = 0;
+		if(new_last_move < GNU_FIRST_MOVE) {
+			GNU_FIRST_MOVE = 0;
+		}
+		memset(board, 0, sizeof(board));
+		int cpt=0;
+		for(cpt=0;cpt<new_last_move;cpt++){
+			//gtp_printf("undo cpt %i\n",cpt);
+			int color = game_moves_color[cpt];
+			int move = game_moves[cpt];
+			
+			play_move(I(move), J(move), color);
+		}
+		
+		getGNUcmd(after,BLACK);
+		//gtp_printf("undo AFTER %i %s\n",current_move_num,after);
+	}
 }
 
 int
@@ -290,6 +320,7 @@ void play_move(int i, int j, int color)
   ko_i = -1;
   ko_j = -1;
 //  gtp_printf("play_move %i i=%i j=%i\n",current_move_num,i,j);
+  game_moves_color[current_move_num] = color;
   game_moves[current_move_num++] = pos;
   /* Nothing more happens if the move was a pass. */
   if (pass_move(i, j))
@@ -416,7 +447,7 @@ void generate_move(int *i, int *j, int color)
    * distribution.)
    */
   if (num_moves > 0) {
-	//askGGNU(&GNUi,&GNUj);
+	//askGGNU(&GNUi,&GNUj,color);
 	if(current_move_num == 0) {
 		move = POS(9,9);
 		GNU_FIRST_MOVE = 0;
@@ -429,20 +460,27 @@ void generate_move(int *i, int *j, int color)
 			&& !suicide(previ, prevj, color)){
 			move = POS(previ,prevj);
 		} else {
-			if(GNU_FIRST_MOVE == 0){
+			if(GNU_FIRST_MOVE == 0 && current_move_num>=current_handicap){
 				
 				//gtp_printf("OK end of the mirror, ");
 				//gtp_printf("GNU takes over %i \n",current_move_num);
 				GNU_FIRST_MOVE=current_move_num;
 			}
-			askGGNU(&GNUi,&GNUj);
+			askGGNU(&GNUi,&GNUj,color);
 			
 			//gtp_printf("\ncGENAAA %i %i %i\n", color, GNUi, GNUj);
-			move = POS(GNUi,GNUj);
+			if(GNUi>=-1){
+				move = POS(GNUi,GNUj);
+			}
 		}
 	}
-    *i = I(move);
-    *j = J(move);
+	if(GNUi>=-1){
+		*i = I(move);
+		*j = J(move);
+	} else {	
+		*i = GNUi;
+		*j = GNUj;
+	}
     
     
 	//gtp_printf("\ncGENBBB %i %i %i\n", color, i, j);
@@ -572,6 +610,7 @@ valid_fixed_handicap(int handicap)
 void
 place_fixed_handicap(int handicap)
 {
+	current_handicap = handicap;
   int low = board_size >= 13 ? 3 : 2;
   int mid = board_size / 2;
   int high = board_size - 1 - low;
@@ -609,7 +648,7 @@ place_free_handicap(int handicap)
 {
   int k;
   int i, j;
-  
+  current_handicap = handicap;
   for (k = 0; k < handicap; k++) {
     generate_move(&i, &j, BLACK);
     play_move(i, j, BLACK);
@@ -621,7 +660,7 @@ place_free_handicap(int handicap)
 
 //printf "komi 6.5\nboardsize 19\nclear_board\nplay B D4\nplay W Q16\nplay B D17\nplay W Q3\nplay B R5\nplay W C15\ngenmove B\nquit\n" | /home/jeff/Documents/go/gnugo/interface/gnugo --mode gtp --quiet | grep "^= [a-zA-Z]" | cat
 
-void getGNUcmd(char *s){
+void getGNUcmd(char *s, int genmove_color){
 	int cpt=0;
 	
 	int color = BLACK;
@@ -638,12 +677,13 @@ void getGNUcmd(char *s){
 	sprintf(boardsizestr,"boardsize %i\\n",board_size);
 	//char cmd[5000] = "komi 6.5\\nboardsize 19\\nclear_board\\nplay B D4\\nplay W Q16\\nplay B D17\\nplay W Q3\\nplay B R5\\ngenmove W\\nquit\\n\" | /home/jeff/Documents/go/gnugo/interface/gnugo --mode gtp --quiet | grep \"^= [a-zA-Z]\" | cat";
 	char gamemovesSTR[5000] = "play B D4\\nplay W Q16\\nplay B D17\\nplay W Q3\\nplay B R5\\n";
-	char cmd[5000] = "genmove W\\nquit\\n\" | /home/jeff/Documents/go/gnugo/interface/gnugo --mode gtp --quiet | grep \"^= [a-zA-Z]\" | cat";
+	char cmd[5000] = "quit\\n\" | /home/jeff/Documents/go/gnugo/interface/gnugo --mode gtp --quiet | grep \"^= [a-zA-Z]\" | cat";
 
 	strcat(s,komistr);
 	strcat(s,boardsizestr);
 	strcat(s,"clear_board\\n");
 	for(cpt=0;cpt<current_move_num;cpt++){
+		color = game_moves_color[cpt];
 		move = game_moves[cpt];
 		i = I(move);
 		j = J(move);
@@ -681,22 +721,27 @@ void getGNUcmd(char *s){
 				strcat(s,"\\n");
 			}
 		}
-		color = OTHER_COLOR(color);
+		//color = current_move_num>=current_handicap ? OTHER_COLOR(color) : BLACK;
 	}
 	//strcat(s,gamemovesSTR);
+	strcat(s,"genmove ");
+	if(genmove_color == BLACK){
+		strcat(s,"B\\n");
+	} else {
+		strcat(s,"W\\n");
+	}
 	strcat(s,cmd);
 }
 
-int askGGNU(int *i, int *j) {
+int askGGNU(int *i, int *j, int color) {
 	FILE *fp;
 	int status;
-	int color = EMPTY;
 	int PATH_MAX = 200;
 	char path[PATH_MAX];
 	char path2[PATH_MAX];
-	char str1[5000] = "B ";
+	char str1[5000] = "";
 	char cmd[5000] = "printf \"";
-	getGNUcmd(cmd);
+	getGNUcmd(cmd,color);
 
 //    :2
 	
@@ -714,13 +759,27 @@ int askGGNU(int *i, int *j) {
 		//printf("answers %s", path);
 		//gtp_printf("coucou %s", path);
 		strncpy (path2, path + 2, strlen(path)-2);
-		//gtp_printf("coucou-2 '%s'", path2);
-		if (strcmp(path2, "resign") || strcmp(path2, "pass")){
+		//gtp_printf("answers '%s'", path2);
+		if (strcmp(path2, "pass")==0 || strcmp(path2, "pass\n")==0 || strcmp(path2, "PASS")==0 || strcmp(path2, "PASS\n")==0){
+			//gtp_printf("GNU wants to pass");
 			//gtp_success(path2);
 			//gtp_success(path2);
 			*i = -1;
 			*j = -1;
 			return 0;
+		}
+		if (strcmp(path2, "resign") ==0 || strcmp(path2, "resign\n") ==0){
+			//gtp_printf("GNU wants to resign");
+			//gtp_success(path2);
+			//gtp_success(path2);
+			*i = -2;
+			*j = -2;
+			return 0;
+		}
+		if(color == BLACK){
+			strcat(str1,"B ");
+		} else {
+			strcat(str1,"W ");
 		}
 		strcat(str1,path2);
 		//gtp_printf("coucou-3 '%s'", str1);

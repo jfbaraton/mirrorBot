@@ -52,6 +52,7 @@ static int gtp_fixed_handicap(char *s);
 static int gtp_place_free_handicap(char *s);
 static int gtp_set_free_handicap(char *s);
 static int gtp_play(char *s);
+static int gtp_undo(char *s);
 static int gtp_genmove(char *s);
 static int gtp_final_score(char *s);
 static int gtp_final_status_list(char *s);
@@ -72,6 +73,7 @@ static struct gtp_command commands[] = {
   {"place_free_handicap", gtp_place_free_handicap},
   {"set_free_handicap",   gtp_set_free_handicap},
   {"play",            	  gtp_play},
+  {"undo",            	  gtp_undo},
   {"genmove",             gtp_genmove},
   {"final_score",         gtp_final_score},
   {"final_status_list",   gtp_final_status_list},
@@ -300,6 +302,13 @@ gtp_play(char *s)
 }
 
 static int
+gtp_undo(char *s)
+{
+	undo();
+    return gtp_success("");
+}
+
+static int
 gtp_genmove(char *s)
 {
   int i, j;
@@ -309,10 +318,16 @@ gtp_genmove(char *s)
     return gtp_failure("invalid color");
 
   generate_move(&i, &j, color);
-  play_move(i, j, color);
+  if(i!=-2)
+	play_move(i, j, color);
 
   gtp_start_response(GTP_SUCCESS);
-  gtp_mprintf("%m", i, j);
+  
+  if(i!=-2)
+	gtp_mprintf("%m", i, j);
+  else
+	gtp_printf("resign");
+  
   return gtp_finish_response();
 }
 
