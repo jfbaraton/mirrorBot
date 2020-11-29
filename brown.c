@@ -284,6 +284,9 @@ remove_string(int i, int j)
   do {
     board[pos] = EMPTY;
     removed++;
+    if(pos == POS(9, 9)) { // if the central stone is captured, we stop the mirror
+		GNU_FIRST_MOVE=current_move_num;
+    }
     pos = next_stone[pos];
   } while (pos != POS(i, j));
 
