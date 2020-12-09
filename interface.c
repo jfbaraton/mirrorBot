@@ -120,7 +120,7 @@ gtp_protocol_version(char *s)
 static int
 gtp_name(char *s)
 {
-  return gtp_success("Brown");
+  return gtp_success("GNU after you play tengen or break the mirror");
 }
 
 static int
