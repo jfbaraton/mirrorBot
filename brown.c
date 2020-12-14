@@ -944,6 +944,8 @@ int askGGNU(int *i, int *j, int color) {
     int MAX_SUGGESTIONS = 10;
     int gnuSuggestionsCpt = 0;
     int leelaSuggestionsCpt = 0;
+    int leelaBest = 0;
+    int gnuBest = 0;
 	char gnuMoves[20][5] = {"\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0"};
 	char leelaMoves[20][5] = {"\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0"};
 	float gnuMovesValue[20] = {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1};
@@ -1020,8 +1022,8 @@ int askGGNU(int *i, int *j, int color) {
 
         while (fgets(path2, PATH_MAX, fp2) != NULL) { // expected result is "= R3 25.01 P3 25.00 Q16 25.00 B2 19.11"
             strncpy (gnuSuggestions, path2 + 2, strlen(path2)-2); // remove the "= " from the answer -> "R3 25.01 P3 25.00 Q16 25.00 B2 19.11"
-            gtp_printf("\ngnuSuggestions\n");
-            gtp_printf(gnuSuggestions);
+            //gtp_printf("\ngnuSuggestions\n");
+            //gtp_printf(gnuSuggestions);
             bool isContinue = true;
             while (isContinue && gnuSuggestionsCpt < MAX_SUGGESTIONS) {
                 //strncpy(gnuMoves[gnuSuggestionsCpt] , "\0",1);
@@ -1049,27 +1051,30 @@ int askGGNU(int *i, int *j, int color) {
                        strncpy (gnuSuggestions, strchr(gnuSuggestions, ' ')+1, strlen(strchr(gnuSuggestions, ' ')));
                     } else {
                         isContinue = false;
-                        gtp_printf("\nno more GNU suggestions\n");
+                        //gtp_printf("\nno more GNU suggestions\n");
+                        //gtp_printf(gnuSuggestions);
                     }
 
                 } else {
                     isContinue = false;
 
                     gtp_printf("\nnot coords\n");
+                    gtp_printf(gnuMoves[gnuSuggestionsCpt]);
+                    gtp_printf(gnuSuggestions);
                 }
                 isContinue = isContinue && strlen(gnuSuggestions) > 4;
             }
         }
-        gtp_printf("\nend of loop on GNU suggestions %d\n",gnuSuggestionsCpt);
+        //gtp_printf("\nend of loop on GNU suggestions %d\n",gnuSuggestionsCpt);
         status2 = pclose(fp2);
 
         // 4) ask leela for move suggestions
 		getLeelaTopMovecmd(cmdLeelaOpinions,color,NULL);
 
 		fp3 = popen(cmdLeelaOpinions, "r");
-        gtp_printf("\nasking leela------------------------------------------------------------------------------\n");
+        //gtp_printf("\nasking leela------------------------------------------------------------------------------\n");
         //gtp_printf(cmdLeelaOpinions);
-        gtp_printf("\n\n");
+        //gtp_printf("\n\n");
 
 
         bool isContinue = true;
@@ -1081,7 +1086,7 @@ int askGGNU(int *i, int *j, int color) {
                 strncpy (leelaSuggestions, leelaSuggestions + 1, strlen(leelaSuggestions)-1); // remove the "= " from the answer -> "R3 25.01 P3 25.00 Q16 25.00 B2 19.11"
             }
             //gtp_printf("\nleelaSuggestion\n");
-            gtp_printf(leelaSuggestions);
+            //gtp_printf(leelaSuggestions);
 
             //strncpy(leelaMoves[leelaSuggestionsCpt] , "\0",1);
             //strncpy(leelaMoves[leelaSuggestionsCpt+1] , "\0",1);
@@ -1112,6 +1117,12 @@ int askGGNU(int *i, int *j, int color) {
                         //gtp_printf(leelaSuggestions);
                         //gtp_printf("float value : %3.2f\n" ,atof(leelaSuggestions));
                         leelaMovesValue[leelaSuggestionsCpt] = atof(leelaSuggestions);
+                        if(leelaMovesValue[leelaSuggestionsCpt] > leelaMovesValue[leelaBest]) {
+                            leelaBest = leelaSuggestionsCpt;
+                        }
+
+
+
                         leelaSuggestionsCpt ++; // validates the current move as being coordinates
                     } else {
                         gtp_printf("\nno probability for this move\n");
@@ -1120,20 +1131,49 @@ int askGGNU(int *i, int *j, int color) {
                 } else {
                     isContinue = false;
                     gtp_printf("\nno : in leela suggestion\n");
+                    gtp_printf(leelaMoves[leelaSuggestionsCpt]);
                 }
 
             } else {
                 isContinue = false;
 
                 gtp_printf("\nnot coords\n");
+                gtp_printf(leelaMoves[leelaSuggestionsCpt]);
             }
             isContinue = isContinue && strlen(leelaSuggestions) > 4;
 
         }
-        gtp_printf("\nend of loop on Leela suggestions %d\n",leelaSuggestionsCpt);
+        //gtp_printf("\nend of loop on Leela suggestions %d\n",leelaSuggestionsCpt);
         status3 = pclose(fp3);
         // 5) take GNU's best suggestion that is in leela scope
+        int gnuIndex =0;
+        for(gnuIndex=0 ;gnuIndex <gnuSuggestionsCpt;gnuIndex++) {
+            int leelaIndex =0;
+            for(leelaIndex=0 ;leelaIndex <leelaSuggestionsCpt && gnuMovesValue[gnuIndex] <0;leelaIndex++) {
+                if(strcmp(gnuMoves[gnuIndex], leelaMoves[leelaIndex]) ==0){
+                    //gtp_printf("found value of %s : %3.2f\n" ,gnuMoves[gnuIndex], leelaMovesValue[leelaIndex]);
+                    gnuMovesValue[gnuIndex] = leelaMovesValue[leelaIndex];
+                    if(gnuMovesValue[gnuIndex] >= gnuMovesValue[gnuBest]) {
+                        //gtp_printf("new best from GNU!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+                        gnuBest = gnuIndex;
+                        if(gnuMovesValue[gnuBest] >= leelaMovesValue[leelaBest]/2.){
+                            //gtp_printf("and its playable!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
 
+                        }
+                    }
+                }
+            }
+        }
+
+        if(gnuMovesValue[gnuBest] >= leelaMovesValue[leelaBest]/2.){
+            gtp_printf("GNU move is OK %s : %3.2f  leela said %s : %3.2f\n",gnuMoves[gnuBest],gnuMovesValue[gnuBest],leelaMoves[leelaBest],leelaMovesValue[leelaBest]);
+            strncpy(path1,"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0",33);
+            strncpy(path1,gnuMoves[gnuBest],5);
+        } else {
+            gtp_printf("Leela move %s : %3.2f because GNU said %s : %3.2f\n",leelaMoves[leelaBest],leelaMovesValue[leelaBest],gnuMoves[gnuBest],gnuMovesValue[gnuBest]);
+            strncpy(path1,"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0",33);
+            strncpy(path1,leelaMoves[leelaBest],5);
+        }
         // if no match between GNU and Leela
         // 6) ask leela opinion on GNU's suggestions
         // 7a) take GNU's best suggestion
@@ -1145,6 +1185,7 @@ int askGGNU(int *i, int *j, int color) {
 			strcat(str1,"W ");
 		}
 		strcat(str1,path1);
+		// path1 contains the chosen move like "A1"
 		// str1 contains the chosen move like "B A1"
 		gtp_decode_move(str1, &color, i, j);
 		//gtp_printf("\ncouc %i %i %i\n", color, *i, *j);
