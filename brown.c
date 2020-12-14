@@ -869,7 +869,6 @@ int askGGNU(int *i, int *j, int color) {
       N4 ->       1 (V: 51.64%) (LCB:  0.00%) (N:  2.40%) PV: N4
      E16 ->       1 (V: 45.91%) (LCB:  0.00%) (N:  2.66%) PV: E16
 	*/
-	getGNUcmd(cmd,color);
 
 //    :2
 	
@@ -914,16 +913,18 @@ int askGGNU(int *i, int *j, int color) {
 		//gtp_printf("coucou-3 '%s'", str1);
 
 		// 3) ask GNU for move suggestions
-		/*getGNUTopMovecmd(cmdGNUIdeas,color);
+		getGNUTopMovecmd(cmdGNUIdeas,color);
 		fp2 = popen(cmdGNUIdeas, "r");
 
 
         while (fgets(path2, PATH_MAX, fp2) != NULL) { // expected result is "= R3 25.01 P3 25.00 Q16 25.00 B2 19.11"
-            strncpy (path3, path2 + 2, strlen(path2)-2); // remove the "= " from the answer -> "R3 25.01 P3 25.00 Q16 25.00 B2 19.11"
+            strncpy (gnuSuggestions, path2 + 2, strlen(path2)-2); // remove the "= " from the answer -> "R3 25.01 P3 25.00 Q16 25.00 B2 19.11"
             bool isContinue = true;
             while (isContinue && gnuSuggestionsCpt < MAX_SUGGESTIONS) {
                 //strncpy(gnuMoves[gnuSuggestionsCpt] , "\0",1);
                 //strncpy(gnuMoves[gnuSuggestionsCpt+1] , "\0",1);
+                gtp_printf("\ngnuSuggestions\n");
+                gtp_printf(gnuSuggestions);
                 strncpy (gnuMoves[gnuSuggestionsCpt], gnuSuggestions , 4);
                 char *spaceCharInMove = strchr(gnuMoves[gnuSuggestionsCpt], ' ');
                 if(NULL != spaceCharInMove){
@@ -933,13 +934,13 @@ int askGGNU(int *i, int *j, int color) {
                     // TODO replace space by \0 in gnuMoves[gnuSuggestionsCpt]
                     //strncpy (gnuMoves[gnuSuggestionsCpt], gnuMoves[gnuSuggestionsCpt], 5-strlen(strchr(gnuMoves[gnuSuggestionsCpt], ' ')));
 
-                    //gtp_printf("gnuMove");gtp_printf("\n");
-                    //gtp_printf(gnuMoves[gnuSuggestionsCpt]);gtp_printf("\n");
+                    gtp_printf("\ngnuMove\n");
+                    gtp_printf(gnuMoves[gnuSuggestionsCpt]);
                     //strlen(gnuMoves[gnuSuggestionsCpt]);
-                    //printf(strlen(gnuMoves[gnuSuggestionsCpt]));printf("\n");
+                    //printf(strlen(gnuMoves[gnuSuggestionsCpt]));
                     //printf(1);printf("\n");
-                    //gtp_printf("gnuSuggestions");gtp_printf("\n");
-                    //gtp_printf(gnuSuggestions);gtp_printf("\n");
+                    gtp_printf("\ngnuSuggestions\n");
+                    gtp_printf(gnuSuggestions);
 
                     gnuSuggestionsCpt ++; // validates the current move as being coordinates
 
@@ -947,21 +948,19 @@ int askGGNU(int *i, int *j, int color) {
                        strncpy (gnuSuggestions, strchr(gnuSuggestions, ' ')+1, strlen(strchr(gnuSuggestions, ' ')));
                     } else {
                         isContinue = false;
-                        //gtp_printf("no more GNU suggestions");gtp_printf("\n");
+                        gtp_printf("\nno more GNU suggestions\n");
                     }
 
                 } else {
                     isContinue = false;
 
-                    //gtp_printf("not coords");gtp_printf("\n");
+                    gtp_printf("\nnot coords\n");
                 }
                 isContinue = isContinue && strlen(gnuSuggestions) > 4;
             }
         }
         status2 = pclose(fp2);
 
-            return 1;
-        }
         // 4) ask leela for move suggestions
         // 5) take GNU's best suggestion that is in leela scope
 
@@ -969,7 +968,7 @@ int askGGNU(int *i, int *j, int color) {
         // 6) ask leela opinion on GNU's suggestions
         // 7a) take GNU's best suggestion
         // 7b) take leela's suggestion that is the closest and above GNU's best suggestion
-*/
+
 		// str1 contains the chosen move like "B A1"
 		gtp_decode_move(str1, &color, i, j);
 		//gtp_printf("\ncouc %i %i %i\n", color, *i, *j);
@@ -993,13 +992,32 @@ int askGGNU(int *i, int *j, int color) {
 
 int askGGNU2(int *i, int *j, int color) {
 	FILE *fp;
-	int status;
-	int PATH_MAX = 200;
-	char path[PATH_MAX];
-	char path2[PATH_MAX];
-	char str1[5000] = "";
-	char cmd[5000] = "printf \"";
-	getGNUcmd(cmd,color);
+    FILE *fp2;
+    FILE *fp3;
+    int status;
+    int status2;
+    int status3;
+    char gnuSuggestions[5000]          = "= R3 25.01 P3 25.00 Q16 25.00 B2 19.11";
+    int PATH_MAX = 200;
+    int MAX_SUGGESTIONS = 10;
+    int gnuSuggestionsCpt = 0;
+    char gnuMoves[20][5] = {"\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0"};
+    char path0[PATH_MAX];
+    char path1[PATH_MAX];
+    char path2[PATH_MAX];
+    char path3[PATH_MAX];
+    char path4[PATH_MAX];
+    char path5[PATH_MAX];
+    char path6[PATH_MAX];
+    char str1[5000] = "";
+    char cmd[5000]          = "printf \"";
+    getGNUcmd(cmd,color);
+    char cmdGNUIdeas[5000]  = "printf \""; //printf "komi 6.5\nboardsize 19\nclear_board\nplay B A1\ntop_moves_black\nquit\n" | /home/jeff/Documents/go/gnugo/interface/gnugo --mode gtp --quiet | grep "^= [a-zA-Z]" | cat
+
+    // GNU top_moves_black responds (% are for BLACK only !!!)
+    // = R3 25.01 P3 25.00 Q16 25.00 B2 19.11
+    char cmdLeelaOpinions[5000] = "printf \""; // printf "komi 6.5\nboardsize 19\nclear_board\nplay B D4\nplay W Q16\nplay B D17\nplay W Q3\nplay B R5\nplay W C15\nplay B O4\nlz-analyze W\nquit\n" | (/home/jeff/Documents/go/leela_zero_latest/build/leelaz -g --noponder -w /home/jeff/Documents/go/leela_zero_latest/LeelaMaster_GXAA.txt --resignpct 1 --playouts 4  3>&1 1>&2- 2>&3- ) | grep "[A-Z][1-9][ 1-9]" | cat
+
 
 //    :2
 	
@@ -1013,10 +1031,10 @@ int askGGNU2(int *i, int *j, int color) {
 		/* Handle error */;
 
 
-	while (fgets(path, PATH_MAX, fp) != NULL) {
+	while (fgets(path0, PATH_MAX, fp) != NULL) {
 		//printf("answers %s", path);
 		//gtp_printf("coucou %s", path);
-		strncpy (path2, path + 2, strlen(path)-2);
+		strncpy (path2, path0 + 2, strlen(path0)-2);
 		//gtp_printf("answers '%s'", path2);
 		if (strcmp(path2, "pass")==0 || strcmp(path2, "pass\n")==0 || strcmp(path2, "PASS")==0 || strcmp(path2, "PASS\n")==0){
 			//gtp_printf("GNU wants to pass");
