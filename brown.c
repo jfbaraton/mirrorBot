@@ -452,7 +452,7 @@ void generate_move(int *i, int *j, int color)
    */
   if (num_moves > 0) {
 	//askGGNU(&GNUi,&GNUj,color);
-	if(current_move_num == 0) {
+	if(false && current_move_num == 0) {
 		move = POS(9,9);
 		GNU_FIRST_MOVE = 0;
 	} else {
@@ -460,7 +460,7 @@ void generate_move(int *i, int *j, int color)
 		prevj = J(game_moves[current_move_num-1]);
 		previ = board_size-1-previ;
 		prevj = board_size-1-prevj;
-		if (GNU_FIRST_MOVE == 0 && legal_move(previ, prevj, color)
+		if (false && GNU_FIRST_MOVE == 0 && legal_move(previ, prevj, color)
 			&& !suicide(previ, prevj, color)){
 			move = POS(previ,prevj);
 		} else {
