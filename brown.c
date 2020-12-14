@@ -914,10 +914,8 @@ int askGGNU(int *i, int *j, int color) {
 		//gtp_printf("coucou-3 '%s'", str1);
 
 		// 3) ask GNU for move suggestions
-		getGNUTopMovecmd(cmdGNUIdeas,color);
+		/*getGNUTopMovecmd(cmdGNUIdeas,color);
 		fp2 = popen(cmdGNUIdeas, "r");
-        if (fp2 == NULL)
-            /* Handle error */;
 
 
         while (fgets(path2, PATH_MAX, fp2) != NULL) { // expected result is "= R3 25.01 P3 25.00 Q16 25.00 B2 19.11"
@@ -935,8 +933,8 @@ int askGGNU(int *i, int *j, int color) {
                     // TODO replace space by \0 in gnuMoves[gnuSuggestionsCpt]
                     //strncpy (gnuMoves[gnuSuggestionsCpt], gnuMoves[gnuSuggestionsCpt], 5-strlen(strchr(gnuMoves[gnuSuggestionsCpt], ' ')));
 
-                    gtp_printf("gnuMove");gtp_printf("\n");
-                    gtp_printf(gnuMoves[gnuSuggestionsCpt]);gtp_printf("\n");
+                    //gtp_printf("gnuMove");gtp_printf("\n");
+                    //gtp_printf(gnuMoves[gnuSuggestionsCpt]);gtp_printf("\n");
                     //strlen(gnuMoves[gnuSuggestionsCpt]);
                     //printf(strlen(gnuMoves[gnuSuggestionsCpt]));printf("\n");
                     //printf(1);printf("\n");
@@ -949,20 +947,18 @@ int askGGNU(int *i, int *j, int color) {
                        strncpy (gnuSuggestions, strchr(gnuSuggestions, ' ')+1, strlen(strchr(gnuSuggestions, ' ')));
                     } else {
                         isContinue = false;
-                        gtp_printf("no more GNU suggestions");gtp_printf("\n");
+                        //gtp_printf("no more GNU suggestions");gtp_printf("\n");
                     }
 
                 } else {
                     isContinue = false;
 
-                    gtp_printf("not coords");gtp_printf("\n");
+                    //gtp_printf("not coords");gtp_printf("\n");
                 }
                 isContinue = isContinue && strlen(gnuSuggestions) > 4;
             }
         }
         status2 = pclose(fp2);
-        if (status2 == -1) {
-            /* Error reported by pclose() */
 
             return 1;
         }
@@ -973,7 +969,7 @@ int askGGNU(int *i, int *j, int color) {
         // 6) ask leela opinion on GNU's suggestions
         // 7a) take GNU's best suggestion
         // 7b) take leela's suggestion that is the closest and above GNU's best suggestion
-
+*/
 		// str1 contains the chosen move like "B A1"
 		gtp_decode_move(str1, &color, i, j);
 		//gtp_printf("\ncouc %i %i %i\n", color, *i, *j);
