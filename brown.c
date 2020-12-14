@@ -919,12 +919,12 @@ int askGGNU(int *i, int *j, int color) {
 
         while (fgets(path2, PATH_MAX, fp2) != NULL) { // expected result is "= R3 25.01 P3 25.00 Q16 25.00 B2 19.11"
             strncpy (gnuSuggestions, path2 + 2, strlen(path2)-2); // remove the "= " from the answer -> "R3 25.01 P3 25.00 Q16 25.00 B2 19.11"
+            gtp_printf("\ngnuSuggestions\n");
+            gtp_printf(gnuSuggestions);
             bool isContinue = true;
             while (isContinue && gnuSuggestionsCpt < MAX_SUGGESTIONS) {
                 //strncpy(gnuMoves[gnuSuggestionsCpt] , "\0",1);
                 //strncpy(gnuMoves[gnuSuggestionsCpt+1] , "\0",1);
-                gtp_printf("\ngnuSuggestions\n");
-                gtp_printf(gnuSuggestions);
                 strncpy (gnuMoves[gnuSuggestionsCpt], gnuSuggestions , 4);
                 char *spaceCharInMove = strchr(gnuMoves[gnuSuggestionsCpt], ' ');
                 if(NULL != spaceCharInMove){
@@ -934,13 +934,13 @@ int askGGNU(int *i, int *j, int color) {
                     // TODO replace space by \0 in gnuMoves[gnuSuggestionsCpt]
                     //strncpy (gnuMoves[gnuSuggestionsCpt], gnuMoves[gnuSuggestionsCpt], 5-strlen(strchr(gnuMoves[gnuSuggestionsCpt], ' ')));
 
-                    gtp_printf("\ngnuMove\n");
+                    //gtp_printf("\ngnuMove\n");
                     gtp_printf(gnuMoves[gnuSuggestionsCpt]);
                     //strlen(gnuMoves[gnuSuggestionsCpt]);
                     //printf(strlen(gnuMoves[gnuSuggestionsCpt]));
                     //printf(1);printf("\n");
-                    gtp_printf("\ngnuSuggestions\n");
-                    gtp_printf(gnuSuggestions);
+                    //gtp_printf("\ngnuSuggestions\n");
+                    //gtp_printf(gnuSuggestions);
 
                     gnuSuggestionsCpt ++; // validates the current move as being coordinates
 
@@ -959,6 +959,7 @@ int askGGNU(int *i, int *j, int color) {
                 isContinue = isContinue && strlen(gnuSuggestions) > 4;
             }
         }
+        gtp_printf("\nend of loop on GNU suggestions\n");
         status2 = pclose(fp2);
 
         // 4) ask leela for move suggestions
