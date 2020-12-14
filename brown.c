@@ -35,6 +35,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include "brown.h"
 
@@ -662,6 +663,7 @@ place_free_handicap(int handicap)
 //printf "komi 6.5\nboardsize 19\nclear_board\nplay B D4\nplay W Q16\nplay B D17\nplay W Q3\nplay B R5\nplay W C15\ngenmove B\n" | /home/jeff/Documents/go/gnugo/interface/gnugo --mode gtp --quiet | grep "^= [a-zA-Z]" | cat
 
 //printf "komi 6.5\nboardsize 19\nclear_board\nplay B D4\nplay W Q16\nplay B D17\nplay W Q3\nplay B R5\nplay W C15\ngenmove B\nquit\n" | /home/jeff/Documents/go/gnugo/interface/gnugo --mode gtp --quiet | grep "^= [a-zA-Z]" | cat
+//printf "komi 6.5\nboardsize 19\nclear_board\nplay B D4\nplay W Q16\nplay B D17\nplay W Q3\nplay B R5\nplay W C15\ngenmove B\nquit\n" | /home/jeff/Documents/go/leela_zero_latest/build/leelaz -g --quiet --noponder -w /home/jeff/Documents/go/leela_zero_latest/LeelaMaster_GXAA.txt --resignpct 1 | grep "^= [a-zA-Z]" | cat
 
 void getGNUcmd(char *s, int genmove_color){
 	int cpt=0;
@@ -679,7 +681,7 @@ void getGNUcmd(char *s, int genmove_color){
 	char boardsizestr[16] = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0" ;
 	sprintf(boardsizestr,"boardsize %i\\n",board_size);
 	//char cmd[5000] = "komi 6.5\\nboardsize 19\\nclear_board\\nplay B D4\\nplay W Q16\\nplay B D17\\nplay W Q3\\nplay B R5\\ngenmove W\\nquit\\n\" | /home/jeff/Documents/go/gnugo/interface/gnugo --mode gtp --quiet | grep \"^= [a-zA-Z]\" | cat";
-	char gamemovesSTR[5000] = "play B D4\\nplay W Q16\\nplay B D17\\nplay W Q3\\nplay B R5\\n";
+	//char gamemovesSTR[5000] = "play B D4\\nplay W Q16\\nplay B D17\\nplay W Q3\\nplay B R5\\n";
 	char cmd[5000] = "quit\\n\" | /home/jeff/Documents/go/gnugo/interface/gnugo --mode gtp --quiet | grep \"^= [a-zA-Z]\" | cat";
 
 	strcat(s,komistr);
@@ -736,7 +738,264 @@ void getGNUcmd(char *s, int genmove_color){
 	strcat(s,cmd);
 }
 
+//printf "komi 6.5\nboardsize 19\nclear_board\nplay B A1\ntop_moves_black\nquit\n" | /home/jeff/Documents/go/gnugo/interface/gnugo --mode gtp --quiet | grep "^= [a-zA-Z]" | cat
+// GNU top_moves_black responds (% are for BLACK only !!!)
+// = R3 25.01 P3 25.00 Q16 25.00 B2 19.11
+void getGNUTopMovecmd(char *s, int genmove_color){
+	int cpt=0;
+
+	int color = BLACK;
+	int move;
+	int i;
+	int j;
+	int ri;
+	int rj;
+
+	char str1[5000] = "B ";
+	char komistr[15] = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0" ;
+	sprintf(komistr,"komi %3.1f\\n",komi);
+	char boardsizestr[16] = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0" ;
+	sprintf(boardsizestr,"boardsize %i\\n",board_size);
+	//char cmd[5000] = "komi 6.5\nboardsize 19\nclear_board\nplay B A1\ntop_moves_black\nquit\n" | /home/jeff/Documents/go/gnugo/interface/gnugo --mode gtp --quiet | grep "^= [a-zA-Z]" | cat
+	//char gamemovesSTR[5000] = "play B D4\\nplay W Q16\\nplay B D17\\nplay W Q3\\nplay B R5\\n";
+	//char cmd[5000] = "quit\\n\" | /home/jeff/Documents/go/gnugo/interface/gnugo --mode gtp --quiet | grep \"^= [a-zA-Z]\" | cat";
+	char cmd[5000] = "quit\\n\" | /home/jeff/Documents/go/gnugo/interface/gnugo --mode gtp --quiet | grep \"^= [a-zA-Z]\" | cat";
+
+	strcat(s,komistr);
+	strcat(s,boardsizestr);
+	strcat(s,"clear_board\\n");
+	for(cpt=0;cpt<current_move_num;cpt++){
+		color = game_moves_color[cpt];
+		move = game_moves[cpt];
+		i = I(move);
+		j = J(move);
+		if(!pass_move(i,j)) {
+
+
+			/*if (k > 0)
+			  gtp_printf(" ");
+			if (i == -1 && j == -1)
+			  gtp_printf("PASS");
+			else*/
+			if (i < 0 || i >= board_size
+				 || j < 0 || j >= board_size) {
+			  //gtp_printf("??");
+			  color = OTHER_COLOR(color);
+			  color = OTHER_COLOR(color);
+			} else {
+				/*if (vertex_transform_output_hook != NULL) {
+					(*vertex_transform_output_hook)(i, j, &ri, &rj);
+				} else {*/
+					ri = i;
+					rj = j;
+				//}
+				strcat(s,"play ");
+				// TODO read the color from the board? what if captures happened?
+				if(color == BLACK){
+					strcat(s,"B ");
+				} else {
+					strcat(s,"W ");
+				}
+				char oneMove[15] = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0" ;
+				sprintf(oneMove,"%c%d", 'A' + rj + (rj >= 8), board_size - ri);
+
+				strcat(s,oneMove);
+				strcat(s,"\\n");
+			}
+		}
+		//color = current_move_num>=current_handicap ? OTHER_COLOR(color) : BLACK;
+	}
+	//strcat(s,gamemovesSTR);
+	strcat(s,"top_moves_");
+	if(genmove_color == BLACK){
+		strcat(s,"black\\n");
+	} else {
+		strcat(s,"white\\n");
+	}
+	strcat(s,cmd);
+}
+
 int askGGNU(int *i, int *j, int color) {
+    /* 1) ask for a GNU move
+       2) if pass or resign => return
+       3) ask GNU for move suggestions
+       4) ask leela for move suggestions
+       5) take GNU's best suggestion that is in leela scope
+
+       if no match between GNU and Leela
+       6) ask leela opinion on GNU's suggestions
+       7a) take GNU's best suggestion
+       7b) take leela's suggestion that is the closest and above GNU's best suggestion
+
+       other ideas:
+
+    */
+	FILE *fp;
+	FILE *fp2;
+	FILE *fp3;
+	int status;
+	int status2;
+	int status3;
+	char gnuSuggestions[5000]          = "= R3 25.01 P3 25.00 Q16 25.00 B2 19.11";
+    int PATH_MAX = 200;
+    int MAX_SUGGESTIONS = 10;
+    int gnuSuggestionsCpt = 0;
+	char gnuMoves[20][5] = {"\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0"};
+	char path0[PATH_MAX];
+	char path1[PATH_MAX];
+	char path2[PATH_MAX];
+	char path3[PATH_MAX];
+	char path4[PATH_MAX];
+	char path5[PATH_MAX];
+	char path6[PATH_MAX];
+	char str1[5000] = "";
+	char cmd[5000]          = "printf \"";
+	getGNUcmd(cmd,color);
+	char cmdGNUIdeas[5000]  = "printf \""; //printf "komi 6.5\nboardsize 19\nclear_board\nplay B A1\ntop_moves_black\nquit\n" | /home/jeff/Documents/go/gnugo/interface/gnugo --mode gtp --quiet | grep "^= [a-zA-Z]" | cat
+
+	// GNU top_moves_black responds (% are for BLACK only !!!)
+	// = R3 25.01 P3 25.00 Q16 25.00 B2 19.11
+	char cmdLeelaOpinions[5000] = "printf \""; // printf "komi 6.5\nboardsize 19\nclear_board\nplay B D4\nplay W Q16\nplay B D17\nplay W Q3\nplay B R5\nplay W C15\nplay B O4\nlz-analyze W\nquit\n" | (/home/jeff/Documents/go/leela_zero_latest/build/leelaz -g --noponder -w /home/jeff/Documents/go/leela_zero_latest/LeelaMaster_GXAA.txt --resignpct 1 --playouts 4  3>&1 1>&2- 2>&3- ) | grep "[A-Z][1-9][ 1-9]" | cat
+	// lz-analyze responds (% are for the asked color)
+	/*
+	 C11 ->       3 (V: 51.93%) (LCB:  0.00%) (N: 26.53%) PV: C11 C6
+     D11 ->       2 (V: 53.69%) (LCB:  0.00%) (N:  2.30%) PV: D11 C13
+      O4 ->       2 (V: 53.40%) (LCB:  0.00%) (N:  3.98%) PV: O4 Q5
+      O3 ->       2 (V: 52.31%) (LCB:  0.00%) (N:  2.44%) PV: O3 P4
+     D13 ->       2 (V: 52.22%) (LCB:  0.00%) (N:  7.35%) PV: D13 E15
+     C10 ->       2 (V: 51.94%) (LCB:  0.00%) (N:  3.27%) PV: C10 B17
+     D12 ->       2 (V: 50.96%) (LCB:  0.00%) (N: 24.27%) PV: D12 E16
+     R14 ->       2 (V: 47.88%) (LCB:  0.00%) (N: 13.96%) PV: R14 O17
+      N4 ->       1 (V: 51.64%) (LCB:  0.00%) (N:  2.40%) PV: N4
+     E16 ->       1 (V: 45.91%) (LCB:  0.00%) (N:  2.66%) PV: E16
+	*/
+	getGNUcmd(cmd,color);
+
+//    :2
+	
+	
+	//fp = popen("printf \"komi 6.5\\nboardsize 19\\nclear_board\\nplay B D4\\nplay W Q16\\nplay B D17\\nplay W Q3\\nplay B R5\\ngenmove W\\nquit\\n\" | /home/jeff/Documents/go/gnugo/interface/gnugo --mode gtp --quiet | grep \"^= [a-zA-Z]\" | cat", "r");
+	
+	//gtp_printf("\nREF 'printf \"komi 6.5\\nboardsize 19\\nclear_board\\nplay B D4\\nplay W Q16\\nplay B D17\\nplay W Q3\\nplay B R5\\ngenmove W\\nquit\\n\" | /home/jeff/Documents/go/gnugo/interface/gnugo --mode gtp --quiet | grep \"^= [a-zA-Z]\" | cat'");
+	//gtp_printf("\ncmd '%s'\n", cmd);
+	fp = popen(cmd, "r");
+	if (fp == NULL)
+		/* Handle error */;
+
+
+	while (fgets(path0, PATH_MAX, fp) != NULL) {
+		//printf("answers %s", path);
+		//gtp_printf("coucou %s", path);
+		strncpy (path1, path0 + 2, strlen(path0)-2); // remove the "= " from the answer "= B A1"
+		//gtp_printf("answers '%s'", path1);
+		if (strcmp(path1, "pass")==0 || strcmp(path1, "pass\n")==0 || strcmp(path1, "PASS")==0 || strcmp(path1, "PASS\n")==0){
+			//gtp_printf("GNU wants to pass");
+			//gtp_success(path1);
+			//gtp_success(path1);
+			*i = -1;
+			*j = -1;
+			return 0;
+		}
+		if (strcmp(path1, "resign") ==0 || strcmp(path1, "resign\n") ==0){
+			//gtp_printf("GNU wants to resign");
+			//gtp_success(path1);
+			//gtp_success(path1);
+			*i = -2;
+			*j = -2;
+			return 0;
+		}
+		//
+		if(color == BLACK){
+			strcat(str1,"B ");
+		} else {
+			strcat(str1,"W ");
+		}
+		strcat(str1,path1);
+		//gtp_printf("coucou-3 '%s'", str1);
+
+		// 3) ask GNU for move suggestions
+		getGNUTopMovecmd(cmdGNUIdeas,color);
+		fp2 = popen(cmdGNUIdeas, "r");
+        if (fp2 == NULL)
+            /* Handle error */;
+
+
+        while (fgets(path2, PATH_MAX, fp2) != NULL) { // expected result is "= R3 25.01 P3 25.00 Q16 25.00 B2 19.11"
+            strncpy (path3, path2 + 2, strlen(path2)-2); // remove the "= " from the answer -> "R3 25.01 P3 25.00 Q16 25.00 B2 19.11"
+            bool isContinue = true;
+            while (isContinue && gnuSuggestionsCpt < MAX_SUGGESTIONS) {
+                //strncpy(gnuMoves[gnuSuggestionsCpt] , "\0",1);
+                //strncpy(gnuMoves[gnuSuggestionsCpt+1] , "\0",1);
+                strncpy (gnuMoves[gnuSuggestionsCpt], gnuSuggestions , 4);
+                char *spaceCharInMove = strchr(gnuMoves[gnuSuggestionsCpt], ' ');
+                if(NULL != spaceCharInMove){
+                    *spaceCharInMove = '\0';
+                    strncpy (gnuSuggestions, gnuSuggestions + 4, strlen(gnuSuggestions)+1-4);
+
+                    // TODO replace space by \0 in gnuMoves[gnuSuggestionsCpt]
+                    //strncpy (gnuMoves[gnuSuggestionsCpt], gnuMoves[gnuSuggestionsCpt], 5-strlen(strchr(gnuMoves[gnuSuggestionsCpt], ' ')));
+
+                    gtp_printf("gnuMove");gtp_printf("\n");
+                    gtp_printf(gnuMoves[gnuSuggestionsCpt]);gtp_printf("\n");
+                    //strlen(gnuMoves[gnuSuggestionsCpt]);
+                    //printf(strlen(gnuMoves[gnuSuggestionsCpt]));printf("\n");
+                    //printf(1);printf("\n");
+                    //gtp_printf("gnuSuggestions");gtp_printf("\n");
+                    //gtp_printf(gnuSuggestions);gtp_printf("\n");
+
+                    gnuSuggestionsCpt ++; // validates the current move as being coordinates
+
+                    if(NULL != strchr(gnuSuggestions, ' ')){
+                       strncpy (gnuSuggestions, strchr(gnuSuggestions, ' ')+1, strlen(strchr(gnuSuggestions, ' ')));
+                    } else {
+                        isContinue = false;
+                        gtp_printf("no more GNU suggestions");gtp_printf("\n");
+                    }
+
+                } else {
+                    isContinue = false;
+
+                    gtp_printf("not coords");gtp_printf("\n");
+                }
+                isContinue = isContinue && strlen(gnuSuggestions) > 4;
+            }
+        }
+        status2 = pclose(fp2);
+        if (status2 == -1) {
+            /* Error reported by pclose() */
+
+            return 1;
+        }
+        // 4) ask leela for move suggestions
+        // 5) take GNU's best suggestion that is in leela scope
+
+        // if no match between GNU and Leela
+        // 6) ask leela opinion on GNU's suggestions
+        // 7a) take GNU's best suggestion
+        // 7b) take leela's suggestion that is the closest and above GNU's best suggestion
+
+		// str1 contains the chosen move like "B A1"
+		gtp_decode_move(str1, &color, i, j);
+		//gtp_printf("\ncouc %i %i %i\n", color, *i, *j);
+	}
+	/*if (!legal_move(i, j, color))
+		return gtp_failure("illegal move");
+*/
+	//play_move(i, j, color);
+
+	status = pclose(fp);
+	if (status == -1) {
+		/* Error reported by pclose() */
+		
+	} else {
+		/* Use macros described under wait() to inspect `status' in order
+		   to determine success/failure of command executed by popen() */
+		return 0;
+	}
+	return 1;
+}
+
+int askGGNU2(int *i, int *j, int color) {
 	FILE *fp;
 	int status;
 	int PATH_MAX = 200;
