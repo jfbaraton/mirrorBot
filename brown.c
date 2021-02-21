@@ -848,7 +848,7 @@ void getLeelaTopMovecmd(char *s, int genmove_color, char *extra_move){
 	//char gamemovesSTR[5000] = "play B D4\\nplay W Q16\\nplay B D17\\nplay W Q3\\nplay B R5\\n";
 	//char cmd[5000] = "quit\\n\" | /home/jeff/Documents/go/gnugo/interface/gnugo --mode gtp --quiet | grep \"^= [a-zA-Z]\" | cat";
 	//char cmd[5000] = "quit\\n\" | (/home/jeff/Documents/go/leela_zero_latest/build/leelaz -g --noponder -w /home/jeff/Documents/go/leela_zero_latest/LeelaMaster_GXAA.txt --resignpct 1 --playouts 4  3>&1 1>&2- 2>&3- ) | grep \"[A-Z][1-9][ 1-9]\" | cat";
-	char cmd[5000] = "quit\\n\" | (/home/jeff/Documents/go/leela_zero_latest/build/leelaz -g --noponder -w /home/jeff/Documents/go/leela_zero_latest/LeelaMaster_GXAA.txt --resignpct 1 --playouts 4  2>&1 ) | grep \"[A-Z][1-9][ 1-9]\" | cat";
+	char cmd[5000] = "quit\\n\" | (/home/jeff/Documents/go/leela_zero_latest/build/leelaz -g --noponder -w /home/jeff/Documents/go/leela_zero_latest/LeelaMaster_GXAA.txt --resignpct 1 --playouts 1000  2>&1 ) | grep \"[A-Z][1-9][ 1-9]\" | cat";
 
 	strcat(s,komistr);
 	strcat(s,boardsizestr);
@@ -908,7 +908,7 @@ void getLeelaTopMovecmd(char *s, int genmove_color, char *extra_move){
 		strcat(s,"\\n");
 	}
 
-	strcat(s,"lz-analyze ");
+	strcat(s,"lz-genmove_analyze ");
 	if(genmove_color == BLACK){
 		strcat(s,"B\\n");
 	} else {
@@ -1003,7 +1003,7 @@ int askGGNU(int *i, int *j, int color) {
 		//gtp_printf("coucou %s", path);
 		strncpy (path1, path0 + 2, strlen(path0)-2); // remove the "= " from the answer "= B A1"
 		//gtp_printf("answers '%s'", path1);
-		if (strcmp(path1, "pass")==0 || strcmp(path1, "pass\n")==0 || strcmp(path1, "PASS")==0 || strcmp(path1, "PASS\n")==0){
+		if (current_move_num > 60 && (strcmp(path1, "pass")==0 || strcmp(path1, "pass\n")==0 || strcmp(path1, "PASS")==0 || strcmp(path1, "PASS\n")==0)){
 			//gtp_printf("GNU wants to pass");
 			//gtp_success(path1);
 			//gtp_success(path1);
@@ -1011,7 +1011,7 @@ int askGGNU(int *i, int *j, int color) {
 			*j = -1;
 			return 0;
 		}
-		if (strcmp(path1, "resign") ==0 || strcmp(path1, "resign\n") ==0){
+		if (current_move_num > 60 && (strcmp(path1, "resign") ==0 || strcmp(path1, "resign\n") ==0)){
 			//gtp_printf("GNU wants to resign");
 			//gtp_success(path1);
 			//gtp_success(path1);
@@ -1077,11 +1077,11 @@ int askGGNU(int *i, int *j, int color) {
 
         // 4) ask leela for move suggestions
 		getLeelaTopMovecmd(cmdLeelaOpinions,color,NULL);
+        //gtp_printf("\nasking leela------------------------------------------------------------------------------\n");
+        //gtp_printf("? oups\n\n");
+        //gtp_printf(cmdLeelaOpinions);
 
 		fp3 = popen(cmdLeelaOpinions, "r");
-        //gtp_printf("\nasking leela------------------------------------------------------------------------------\n");
-        //gtp_printf(cmdLeelaOpinions);
-        //gtp_printf("\n\n");
 
 
         bool isContinue = true;
@@ -1261,22 +1261,22 @@ int askGGNU(int *i, int *j, int color) {
             gnuMovesValue[gnuBest]=100-leelaMovesValueAFTER[leelaBestAFTER];
         }
         float resignThreshold = 0.1;
-        if(leelaMovesValue[leelaBest] <= resignThreshold && gnuMovesValue[gnuBest] <= resignThreshold) {
+        if(current_move_num > 60 && (leelaMovesValue[leelaBest] <= resignThreshold && gnuMovesValue[gnuBest] <= resignThreshold)) {
 			*i = -2;
 			*j = -2;
 			return 0;
 		}
 
-        int behaviourThreshold = 30; // under that % for the best leela move, we make an extra effort to catch up
+        int behaviourThreshold = current_move_num > 10 ? 99 : 30; // under that % for the best leela move, we make an extra effort to catch up
 
 
-        if( (leelaMovesValue[leelaBest] > behaviourThreshold && (gnuMovesValue[gnuBest] >= leelaMovesValue[leelaBest]/2. && gnuMovesValue[gnuBest] >= leelaMovesValue[leelaBest]-15)) ||
-            (leelaMovesValue[leelaBest] < behaviourThreshold && (gnuMovesValue[gnuBest] >= leelaMovesValue[leelaBest]*3/4. && gnuMovesValue[gnuBest] >= leelaMovesValue[leelaBest]-5 ))){
-            //gtp_printf("= GNU move is OK %s : %3.2f  leela said %s : %3.2f\n",gnuMoves[gnuBest],gnuMovesValue[gnuBest],leelaMoves[leelaBest],leelaMovesValue[leelaBest]);
+        if( (leelaMovesValue[leelaBest] > behaviourThreshold && (gnuMovesValue[gnuBest] >= leelaMovesValue[leelaBest]/2. && gnuMovesValue[gnuBest] >= leelaMovesValue[leelaBest]-10)) ||
+            (leelaMovesValue[leelaBest] < behaviourThreshold && (gnuMovesValue[gnuBest] >= leelaMovesValue[leelaBest]*3/4. && gnuMovesValue[gnuBest] >= leelaMovesValue[leelaBest]-0 ))){
+            gtp_printf("= GNU move is OK %s : %3.2f  leela said %s : %3.2f\n",gnuMoves[gnuBest],gnuMovesValue[gnuBest],leelaMoves[leelaBest],leelaMovesValue[leelaBest]);
             strncpy(path1,"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0",33);
             strncpy(path1,gnuMoves[gnuBest],5);
         } else {
-            //gtp_printf("= Leela move %s : %3.2f because GNU said %s : %3.2f\n",leelaMoves[leelaBest],leelaMovesValue[leelaBest],gnuMoves[gnuBest],gnuMovesValue[gnuBest]);
+            gtp_printf("= Leela move %s : %3.2f because GNU said %s : %3.2f\n",leelaMoves[leelaBest],leelaMovesValue[leelaBest],gnuMoves[gnuBest],gnuMovesValue[gnuBest]);
             strncpy(path1,"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0",33);
             strncpy(path1,leelaMoves[leelaBest],5);
         }
