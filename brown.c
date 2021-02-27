@@ -829,7 +829,7 @@ void getGNUTopMovecmd(char *s, int genmove_color){
   N4 ->       1 (V: 51.64%) (LCB:  0.00%) (N:  2.40%) PV: N4
  E16 ->       1 (V: 45.91%) (LCB:  0.00%) (N:  2.66%) PV: E16
 */
-void getLeelaTopMovecmd(char *s, int genmove_color, char *extra_move){
+void getLeelaTopMovecmd(char *s, int genmove_color, char *extra_move, bool is_shallow){ // is_shallow = true causes a superficial search. used to check a response to GNU move
 	int cpt=0;
 
 	int color = BLACK;
@@ -848,7 +848,13 @@ void getLeelaTopMovecmd(char *s, int genmove_color, char *extra_move){
 	//char gamemovesSTR[5000] = "play B D4\\nplay W Q16\\nplay B D17\\nplay W Q3\\nplay B R5\\n";
 	//char cmd[5000] = "quit\\n\" | /home/jeff/Documents/go/gnugo/interface/gnugo --mode gtp --quiet | grep \"^= [a-zA-Z]\" | cat";
 	//char cmd[5000] = "quit\\n\" | (/home/jeff/Documents/go/leela_zero_latest/build/leelaz -g --noponder -w /home/jeff/Documents/go/leela_zero_latest/LeelaMaster_GXAA.txt --resignpct 1 --playouts 4  3>&1 1>&2- 2>&3- ) | grep \"[A-Z][1-9][ 1-9]\" | cat";
-	char cmd[5000] = "quit\\n\" | (/home/jeff/Documents/go/leela_zero_latest/build/leelaz -g --noponder -w /home/jeff/Documents/go/leela_zero_latest/LeelaMaster_GXAA.txt --resignpct 1 --playouts 1000  2>&1 ) | grep \"[A-Z][1-9][ 1-9]\" | cat";
+	char shallow_cmd[5000] =
+	            "quit\\n\" | (/home/jeff/Documents/go/leela_zero_latest/build/leelaz -g --noponder -w /home/jeff/Documents/go/leela_zero_latest/LeelaMaster_GXAA.txt --resignpct 1 --playouts 300  2>&1 ) | grep \"[A-Z][1-9][ 1-9]\" | cat";
+	char deep_cmd[5000] =
+     	        "quit\\n\" | (/home/jeff/Documents/go/leela_zero_latest/build/leelaz -g --noponder -w /home/jeff/Documents/go/leela_zero_latest/LeelaMaster_GXAA.txt --resignpct 1 --playouts 1200  2>&1 ) | grep \"[A-Z][1-9][ 1-9]\" | cat";
+
+    char * cmd;
+    cmd = is_shallow ? shallow_cmd : deep_cmd;
 
 	strcat(s,komistr);
 	strcat(s,boardsizestr);
@@ -984,6 +990,40 @@ int askGGNU(int *i, int *j, int color) {
      R14 ->       2 (V: 47.88%) (LCB:  0.00%) (N: 13.96%) PV: R14 O17
       N4 ->       1 (V: 51.64%) (LCB:  0.00%) (N:  2.40%) PV: N4
      E16 ->       1 (V: 45.91%) (LCB:  0.00%) (N:  2.66%) PV: E16
+
+
+    printf "komi 6.5\nboardsize 19\nclear_board\nplay B K10\nplay W D4\nlz-genmove_analyze B\nquit\n" | (/home/jeff/Documents/go/leela_zero_latest/build/leelaz -g --noponder -w /home/jeff/Documents/go/leela_zero_latest/LeelaMaster_GXAA.txt --resignpct 1 --playouts 3000  2>&1 ) | grep "[A-Z][1-9][ 1-9]" | cat
+
+     // lz-genmove_analyze responds
+     Playouts: 644, Win: 43.89%, PV: P15 D16 Q6 R15 R16 S16 Q16 R17 Q17 S18
+      Q17 ->      48 (V: 46.45%) (LCB: 45.33%) (N:  1.10%) PV: Q17 D16 Q3 Q15 Q12 N16 P15 P14
+      R16 ->      48 (V: 46.41%) (LCB: 45.26%) (N:  1.30%) PV: R16 Q4 C16 P16 M16 Q13 P15 O15
+      P15 ->     108 (V: 45.91%) (LCB: 44.94%) (N:  2.44%) PV: P15 D16 O4 R4 R3 Q3 Q4 Q2
+      Q16 ->     166 (V: 45.08%) (LCB: 44.09%) (N:  8.50%) PV: Q16 D16 Q3 Q5 R7 R3 N3 Q4 Q2 S5 R10
+      R15 ->      34 (V: 44.87%) (LCB: 43.89%) (N:  1.35%) PV: R15 D16 P3 R4 R6 Q5 Q6 P5 P6
+      P17 ->      22 (V: 44.75%) (LCB: 43.60%) (N:  0.97%) PV: P17 D16 R5 R16 R14 Q15 Q14 P15 P14
+      P16 ->      29 (V: 44.65%) (LCB: 43.55%) (N:  1.23%) PV: P16 D16 R5 R16 Q14 P17 O17 Q17 O16
+      Q15 ->      32 (V: 44.63%) (LCB: 43.26%) (N:  1.49%) PV: Q15 Q4 E17 Q17 O16 R15 R14 R16 Q14
+      Q14 ->      69 (V: 45.48%) (LCB: 43.03%) (N:  1.96%) PV: Q14 D16 O4 R5 Q4 R4 R3 S3 S2 R8
+      O16 ->      67 (V: 45.38%) (LCB: 42.93%) (N:  1.18%) PV: O16 Q4 D14 E16 D16 D17 C17 C18 E17 D18
+      D16 ->      81 (V: 44.15%) (LCB: 42.68%) (N:  4.53%) PV: D16 Q16 Q4 F17 C14 D18 C17 J17 R14 O16
+       G4 ->      17 (V: 45.17%) (LCB: 42.46%) (N:  1.21%) PV: G4 D6 P3 Q16 D16 Q5 P5 P6 O5 Q4
+       Q4 ->      71 (V: 43.63%) (LCB: 41.98%) (N:  5.61%) PV: Q4 Q16 D16 R6 O3 S4 R3 R9 O17 Q14 Q18 R17 L17
+       C6 ->      63 (V: 44.31%) (LCB: 41.54%) (N:  3.94%) PV: C6 F3 G4 G3 J4 Q4 H3 F4 G5 D6 D7
+      C16 ->      20 (V: 43.14%) (LCB: 39.04%) (N:  2.09%) PV: C16 Q16 Q4 E17 H16 E14
+       F3 ->      27 (V: 41.67%) (LCB: 38.30%) (N:  4.39%) PV: F3 C6 P3 Q16 R14 O17 R6 D16 P14 S16
+       K4 ->      19 (V: 37.23%) (LCB: 30.15%) (N:  6.59%) PV: K4 Q4 Q14 D16 D10 F17 R6 O3 P6
+      D10 ->      18 (V: 33.15%) (LCB: 22.33%) (N:  9.62%) PV: D10 D16 K4 Q4 Q10 Q16 K16
+      C15 ->      15 (V: 43.10%) (LCB: 38.22%) (N:  1.52%) PV: C15 Q16 C6 F3 O17 R14 K16
+      D15 ->      14 (V: 42.41%) (LCB: 35.74%) (N:  1.58%) PV: D15 Q16 C6 F3 O17 R14 K16
+       Q3 ->       9 (V: 42.65%) (LCB: 32.86%) (N:  1.31%) PV: Q3 Q16 R14 O17 R9 D16 F3 C6 K4
+      K16 ->       9 (V: 36.71%) (LCB: 18.71%) (N:  1.99%) PV: K16 Q16 K4 Q4 D10 D16
+      E16 ->       8 (V: 42.14%) (LCB: 30.36%) (N:  1.29%) PV: E16 Q16 O17 R14 C6 F3 D10
+      D14 ->       8 (V: 40.56%) (LCB: 17.25%) (N:  1.42%) PV: D14 Q16 K16 Q4 K4
+      Q10 ->       5 (V: 39.23%) (LCB:  0.00%) (N:  1.15%) PV: Q10 Q16 D10 D16 K4
+      E15 ->       3 (V: 44.68%) (LCB:  0.00%) (N:  0.99%) PV: E15 Q16 O17
+      H10 ->       2 (V: 40.68%) (LCB:  0.00%) (N:  0.96%) PV: H10 D16
+     play Q17
 	*/
 
 //    :2
@@ -1076,7 +1116,7 @@ int askGGNU(int *i, int *j, int color) {
         status2 = pclose(fp2);
 
         // 4) ask leela for move suggestions
-		getLeelaTopMovecmd(cmdLeelaOpinions,color,NULL);
+		getLeelaTopMovecmd(cmdLeelaOpinions,color,NULL, false);
         //gtp_printf("\nasking leela------------------------------------------------------------------------------\n");
         //gtp_printf("? oups\n\n");
         //gtp_printf(cmdLeelaOpinions);
@@ -1114,38 +1154,39 @@ int askGGNU(int *i, int *j, int color) {
                 //gtp_printf("\nleelaSuggestions\n");
                 //gtp_printf(leelaSuggestions);
 
-
                 if(NULL != strchr(leelaSuggestions, ':')){
-                    strncpy (leelaSuggestions, strchr(leelaSuggestions, ':')+2, strlen(strchr(leelaSuggestions, ':'))-1);
-                    spaceCharInMove = strchr(leelaSuggestions, '%');
-                    if(NULL != spaceCharInMove){
-                        *spaceCharInMove = '\0';
-                        //gtp_printf("\nprobability:\n");
-                        //gtp_printf(leelaSuggestions);
-                        //gtp_printf("float value : %3.2f\n" ,atof(leelaSuggestions));
-                        leelaMovesValue[leelaSuggestionsCpt] = atof(leelaSuggestions);
-                        if(leelaMovesValue[leelaSuggestionsCpt] > leelaMovesValue[leelaBest]) {
-                            leelaBest = leelaSuggestionsCpt;
+                    if(NULL != strchr(leelaSuggestions, '(')){
+                        strncpy (leelaSuggestions, strchr(leelaSuggestions, ':')+2, strlen(strchr(leelaSuggestions, ':'))-1);
+                        spaceCharInMove = strchr(leelaSuggestions, '%');
+                        if(NULL != spaceCharInMove){
+                            *spaceCharInMove = '\0';
+                            //gtp_printf("\nprobability AAA :\n");
+                            //gtp_printf(leelaSuggestions);
+                            //gtp_printf("float value : %3.2f\n" ,atof(leelaSuggestions));
+                            leelaMovesValue[leelaSuggestionsCpt] = atof(leelaSuggestions);
+                            if(leelaMovesValue[leelaSuggestionsCpt] > leelaMovesValue[leelaBest]) {
+                                leelaBest = leelaSuggestionsCpt;
+                            }
+
+
+
+                            leelaSuggestionsCpt ++; // validates the current move as being coordinates
+                        } else {
+                            /*gtp_printf("\nno probability for this move\n");
+                            gtp_printf(leelaSuggestions);*/
                         }
-
-
-
-                        leelaSuggestionsCpt ++; // validates the current move as being coordinates
-                    } else {
-                        /*gtp_printf("\nno probability for this move\n");
-                        gtp_printf(leelaSuggestions);*/
                     }
                 } else {
                     isContinue = false;
-                    /*gtp_printf("\nno : in leela suggestion\n");
-                    gtp_printf(leelaMoves[leelaSuggestionsCpt]);*/
+                    //gtp_printf("\nno : in leela suggestion\n");
+                    //gtp_printf(leelaMoves[leelaSuggestionsCpt]);
                 }
 
             } else {
-                isContinue = false;
+                //isContinue = false;
 
-               /* gtp_printf("\nnot coords\n");
-                gtp_printf(leelaMoves[leelaSuggestionsCpt]);*/
+               //gtp_printf("\nnot coords\n");
+                //gtp_printf(leelaMoves[leelaSuggestionsCpt]);
             }
 
         }
@@ -1183,7 +1224,7 @@ int askGGNU(int *i, int *j, int color) {
                 strcat(gnufirst,"W ");
             }*/
             strcat(gnufirst,path1);
-            getLeelaTopMovecmd(cmdLeelaOpinionsAfter,OTHER_COLOR(color),gnufirst);
+            getLeelaTopMovecmd(cmdLeelaOpinionsAfter,OTHER_COLOR(color),gnufirst, true);
 
             //gtp_printf("= cmd AFTER %s ",cmdLeelaOpinionsAfter);
 
@@ -1223,24 +1264,26 @@ int askGGNU(int *i, int *j, int color) {
 
 
                     if(NULL != strchr(leelaSuggestionsAFTER, ':')){
-                        strncpy (leelaSuggestionsAFTER, strchr(leelaSuggestionsAFTER, ':')+2, strlen(strchr(leelaSuggestionsAFTER, ':'))-1);
-                        spaceCharInMove = strchr(leelaSuggestionsAFTER, '%');
-                        if(NULL != spaceCharInMove){
-                            *spaceCharInMove = '\0';
-                            //gtp_printf("\nprobability:\n");
-                            //gtp_printf(leelaSuggestionsAFTER);
-                            //gtp_printf("float value : %3.2f\n" ,atof(leelaSuggestionsAFTER));
-                            leelaMovesValueAFTER[leelaSuggestionsCptAFTER] = atof(leelaSuggestionsAFTER);
-                            if(leelaMovesValueAFTER[leelaSuggestionsCptAFTER] > leelaMovesValueAFTER[leelaBestAFTER]) {
-                                leelaBestAFTER = leelaSuggestionsCptAFTER;
+                        if(NULL != strchr(leelaSuggestionsAFTER, '(')){
+                            strncpy (leelaSuggestionsAFTER, strchr(leelaSuggestionsAFTER, ':')+2, strlen(strchr(leelaSuggestionsAFTER, ':'))-1);
+                            spaceCharInMove = strchr(leelaSuggestionsAFTER, '%');
+                            if(NULL != spaceCharInMove){
+                                *spaceCharInMove = '\0';
+                                //gtp_printf("\nprobability:\n");
+                                //gtp_printf(leelaSuggestionsAFTER);
+                                //gtp_printf("float value : %3.2f\n" ,atof(leelaSuggestionsAFTER));
+                                leelaMovesValueAFTER[leelaSuggestionsCptAFTER] = atof(leelaSuggestionsAFTER);
+                                if(leelaMovesValueAFTER[leelaSuggestionsCptAFTER] > leelaMovesValueAFTER[leelaBestAFTER]) {
+                                    leelaBestAFTER = leelaSuggestionsCptAFTER;
+                                }
+
+
+
+                                leelaSuggestionsCptAFTER ++; // validates the current move as being coordinates
+                            } else {
+                                //gtp_printf("= \nno probability for this moveAFTER\n");
+                                //gtp_printf("= XXX %s\n",leelaSuggestionsAFTER);
                             }
-
-
-
-                            leelaSuggestionsCptAFTER ++; // validates the current move as being coordinates
-                        } else {
-                            //gtp_printf("= \nno probability for this moveAFTER\n");
-                            //gtp_printf("= XXX %s\n",leelaSuggestionsAFTER);
                         }
                     } else {
                         isContinue = false;
@@ -1249,7 +1292,7 @@ int askGGNU(int *i, int *j, int color) {
                     }
 
                 } else {
-                    isContinue = false;
+                    //isContinue = false;
 
                     //gtp_printf("= \nnot coordsAFTER\n");
                     //gtp_printf("= XXZ %s\n",leelaMovesAFTER[leelaSuggestionsCptAFTER]);
@@ -1272,11 +1315,11 @@ int askGGNU(int *i, int *j, int color) {
 
         if( (leelaMovesValue[leelaBest] > behaviourThreshold && (gnuMovesValue[gnuBest] >= leelaMovesValue[leelaBest]/2. && gnuMovesValue[gnuBest] >= leelaMovesValue[leelaBest]-10)) ||
             (leelaMovesValue[leelaBest] < behaviourThreshold && (gnuMovesValue[gnuBest] >= leelaMovesValue[leelaBest]*3/4. && gnuMovesValue[gnuBest] >= leelaMovesValue[leelaBest]-0 ))){
-            gtp_printf("= GNU move is OK %s : %3.2f  leela said %s : %3.2f\n",gnuMoves[gnuBest],gnuMovesValue[gnuBest],leelaMoves[leelaBest],leelaMovesValue[leelaBest]);
+            //gtp_printf("= GNU move is OK %s : %3.2f  leela said %s : %3.2f\n",gnuMoves[gnuBest],gnuMovesValue[gnuBest],leelaMoves[leelaBest],leelaMovesValue[leelaBest]);
             strncpy(path1,"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0",33);
             strncpy(path1,gnuMoves[gnuBest],5);
         } else {
-            gtp_printf("= Leela move %s : %3.2f because GNU said %s : %3.2f\n",leelaMoves[leelaBest],leelaMovesValue[leelaBest],gnuMoves[gnuBest],gnuMovesValue[gnuBest]);
+            //gtp_printf("= Leela move %s : %3.2f because GNU said %s : %3.2f\n",leelaMoves[leelaBest],leelaMovesValue[leelaBest],gnuMoves[gnuBest],gnuMovesValue[gnuBest]);
             strncpy(path1,"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0",33);
             strncpy(path1,leelaMoves[leelaBest],5);
         }
