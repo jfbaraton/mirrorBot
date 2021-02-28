@@ -95,7 +95,7 @@ init_brown()
   clear_board();
   for (k = 0; k < 0; k++) {
 	  
-	//gtp_printf("init_brown %i\n",current_move_num);
+	//gtp_printf("= Zinit_brown %i\n",current_move_num);
     int color = rand() % 2 ? BLACK : WHITE;
     generate_move(&i, &j, color);
     play_move(i, j, color);
@@ -110,7 +110,7 @@ clear_board()
   memset(game_moves_color, 0, sizeof(game_moves));
   current_move_num = 0;
   GNU_FIRST_MOVE = 0;
-//  gtp_printf("clear_board\n");
+//  gtp_printf("= Zclear_board\n");
 }
 
 void undo(){
@@ -118,7 +118,7 @@ void undo(){
 	char before[5000] = "printf \"";
 	char after[5000] = "printf \"";
 	getGNUcmd(before,BLACK);
-	//gtp_printf("undo BEFORE %i %s\n",current_move_num,before);
+	//gtp_printf("= Zundo BEFORE %i %s\n",current_move_num,before);
 	if(current_move_num>0) {
 		int new_last_move = current_move_num-1;
 		current_move_num = 0;
@@ -128,7 +128,7 @@ void undo(){
 		memset(board, 0, sizeof(board));
 		int cpt=0;
 		for(cpt=0;cpt<new_last_move;cpt++){
-			//gtp_printf("undo cpt %i\n",cpt);
+			//gtp_printf("= Zundo cpt %i\n",cpt);
 			int color = game_moves_color[cpt];
 			int move = game_moves[cpt];
 			
@@ -136,7 +136,7 @@ void undo(){
 		}
 		
 		getGNUcmd(after,BLACK);
-		//gtp_printf("undo AFTER %i %s\n",current_move_num,after);
+		//gtp_printf("= Zundo AFTER %i %s\n",current_move_num,after);
 	}
 }
 
@@ -323,13 +323,13 @@ void play_move(int i, int j, int color)
   /* Reset the ko point. */
   ko_i = -1;
   ko_j = -1;
-//  gtp_printf("play_move %i i=%i j=%i\n",current_move_num,i,j);
+//  gtp_printf("= Zplay_move %i i=%i j=%i\n",current_move_num,i,j);
   game_moves_color[current_move_num] = color;
   game_moves[current_move_num++] = pos;
   /* Nothing more happens if the move was a pass. */
   if (pass_move(i, j))
     return;
-//  gtp_printf("play_move not pass");
+//  gtp_printf("= Zplay_move not pass");
 
   /* If the move is a suicide we only need to remove the adjacent
    * friendly stones.
@@ -345,7 +345,7 @@ void play_move(int i, int j, int color)
     return;
   }
 
-//  gtp_printf("play_move not suicide");
+//  gtp_printf("= Zplay_move not suicide");
   /* Not suicide. Remove captured opponent strings. */
   for (k = 0; k < 4; k++) {
     int ai = i + deltai[k];
@@ -382,7 +382,7 @@ void play_move(int i, int j, int color)
       next_stone[pos] = tmp;
     }
   }
-//  gtp_printf("play_move check ko");
+//  gtp_printf("= Zplay_move check ko");
 
   /* If we have captured exactly one stone and the new string is a
    * single stone it may have been a ko capture.
@@ -466,13 +466,13 @@ void generate_move(int *i, int *j, int color)
 		} else {
 			if(GNU_FIRST_MOVE == 0 && current_move_num>=current_handicap){
 				
-				//gtp_printf("OK end of the mirror, ");
-				//gtp_printf("GNU takes over %i \n",current_move_num);
+				//gtp_printf("= ZOK end of the mirror, ");
+				//gtp_printf("= ZGNU takes over %i \n",current_move_num);
 				GNU_FIRST_MOVE=current_move_num;
 			}
 			askGGNU(&GNUi,&GNUj,color);
 			
-			//gtp_printf("\ncGENAAA %i %i %i\n", color, GNUi, GNUj);
+			//gtp_printf("= Z\ncGENAAA %i %i %i\n", color, GNUi, GNUj);
 			if(GNUi>=-1){
 				move = POS(GNUi,GNUj);
 			}
@@ -487,7 +487,7 @@ void generate_move(int *i, int *j, int color)
 	}
     
     
-	//gtp_printf("\ncGENBBB %i %i %i\n", color, i, j);
+	//gtp_printf("= Z\ncGENBBB %i %i %i\n", color, i, j);
   }
   else {
     /* But pass if no move was considered. */
@@ -849,9 +849,9 @@ void getLeelaTopMovecmd(char *s, int genmove_color, char *extra_move, bool is_sh
 	//char cmd[5000] = "quit\\n\" | /home/jeff/Documents/go/gnugo/interface/gnugo --mode gtp --quiet | grep \"^= [a-zA-Z]\" | cat";
 	//char cmd[5000] = "quit\\n\" | (/home/jeff/Documents/go/leela_zero_latest/build/leelaz -g --noponder -w /home/jeff/Documents/go/leela_zero_latest/LeelaMaster_GXAA.txt --resignpct 1 --playouts 4  3>&1 1>&2- 2>&3- ) | grep \"[A-Z][1-9][ 1-9]\" | cat";
 	char shallow_cmd[5000] =
-	            "quit\\n\" | (/home/jeff/Documents/go/leela_zero_latest/build/leelaz -g --noponder -w /home/jeff/Documents/go/leela_zero_latest/LeelaMaster_GXAA.txt --resignpct 1 --playouts 300  2>&1 ) | grep \"[A-Z][1-9][ 1-9]\" | cat";
+	            "quit\\n\" | (/home/jeff/Documents/go/leela_zero_latest/build/leelaz -g --noponder -w /home/jeff/Documents/go/leela_zero_latest/LeelaMaster_GXAA.txt --resignpct 1 --playouts 10  2>&1 ) | grep \"[A-Z][1-9][ 1-9]\" | cat";
 	char deep_cmd[5000] =
-     	        "quit\\n\" | (/home/jeff/Documents/go/leela_zero_latest/build/leelaz -g --noponder -w /home/jeff/Documents/go/leela_zero_latest/LeelaMaster_GXAA.txt --resignpct 1 --playouts 1200  2>&1 ) | grep \"[A-Z][1-9][ 1-9]\" | cat";
+     	        "quit\\n\" | (/home/jeff/Documents/go/leela_zero_latest/build/leelaz -g --noponder -w /home/jeff/Documents/go/leela_zero_latest/LeelaMaster_GXAA.txt --resignpct 1 --playouts 1050  2>&1 ) | grep \"[A-Z][1-9][ 1-9]\" | cat";
 
     char * cmd;
     cmd = is_shallow ? shallow_cmd : deep_cmd;
@@ -1031,8 +1031,8 @@ int askGGNU(int *i, int *j, int color) {
 	
 	//fp = popen("printf \"komi 6.5\\nboardsize 19\\nclear_board\\nplay B D4\\nplay W Q16\\nplay B D17\\nplay W Q3\\nplay B R5\\ngenmove W\\nquit\\n\" | /home/jeff/Documents/go/gnugo/interface/gnugo --mode gtp --quiet | grep \"^= [a-zA-Z]\" | cat", "r");
 	
-	//gtp_printf("\nREF 'printf \"komi 6.5\\nboardsize 19\\nclear_board\\nplay B D4\\nplay W Q16\\nplay B D17\\nplay W Q3\\nplay B R5\\ngenmove W\\nquit\\n\" | /home/jeff/Documents/go/gnugo/interface/gnugo --mode gtp --quiet | grep \"^= [a-zA-Z]\" | cat'");
-	//gtp_printf("\ncmd '%s'\n", cmd);
+	//gtp_printf("= Z\nREF 'printf \"komi 6.5\\nboardsize 19\\nclear_board\\nplay B D4\\nplay W Q16\\nplay B D17\\nplay W Q3\\nplay B R5\\ngenmove W\\nquit\\n\" | /home/jeff/Documents/go/gnugo/interface/gnugo --mode gtp --quiet | grep \"^= [a-zA-Z]\" | cat'");
+	//gtp_printf("= Z\ncmd '%s'\n", cmd);
 	fp = popen(cmd, "r");
 	if (fp == NULL)
 		/* Handle error */;
@@ -1040,11 +1040,11 @@ int askGGNU(int *i, int *j, int color) {
 
 	while (fgets(path0, PATH_MAX, fp) != NULL) {
 		//printf("answers %s", path);
-		//gtp_printf("coucou %s", path);
+		//gtp_printf("= Zcoucou %s", path);
 		strncpy (path1, path0 + 2, strlen(path0)-2); // remove the "= " from the answer "= B A1"
-		//gtp_printf("answers '%s'", path1);
+		//gtp_printf("= Zanswers '%s'", path1);
 		if (current_move_num > 60 && (strcmp(path1, "pass")==0 || strcmp(path1, "pass\n")==0 || strcmp(path1, "PASS")==0 || strcmp(path1, "PASS\n")==0)){
-			//gtp_printf("GNU wants to pass");
+			//gtp_printf("= ZGNU wants to pass");
 			//gtp_success(path1);
 			//gtp_success(path1);
 			*i = -1;
@@ -1052,7 +1052,7 @@ int askGGNU(int *i, int *j, int color) {
 			return 0;
 		}
 		if (current_move_num > 60 && (strcmp(path1, "resign") ==0 || strcmp(path1, "resign\n") ==0)){
-			//gtp_printf("GNU wants to resign");
+			//gtp_printf("= ZGNU wants to resign");
 			//gtp_success(path1);
 			//gtp_success(path1);
 			*i = -2;
@@ -1060,7 +1060,7 @@ int askGGNU(int *i, int *j, int color) {
 			return 0;
 		}
 		//
-		//gtp_printf("coucou-3 '%s'", str1);
+		//gtp_printf("= Zcoucou-3 '%s'", str1);
 
 		// 3) ask GNU for move suggestions
 		getGNUTopMovecmd(cmdGNUIdeas,color);
@@ -1069,7 +1069,7 @@ int askGGNU(int *i, int *j, int color) {
 
         while (fgets(path2, PATH_MAX, fp2) != NULL) { // expected result is "= R3 25.01 P3 25.00 Q16 25.00 B2 19.11"
             strncpy (gnuSuggestions, path2 + 2, strlen(path2)-2); // remove the "= " from the answer -> "R3 25.01 P3 25.00 Q16 25.00 B2 19.11"
-            //gtp_printf("\ngnuSuggestions\n");
+            //gtp_printf("= Z\ngnuSuggestions\n");
             //gtp_printf(gnuSuggestions);
             bool isContinue = true;
             while (isContinue && gnuSuggestionsCpt < MAX_SUGGESTIONS) {
@@ -1084,12 +1084,12 @@ int askGGNU(int *i, int *j, int color) {
                     // TODO replace space by \0 in gnuMoves[gnuSuggestionsCpt]
                     //strncpy (gnuMoves[gnuSuggestionsCpt], gnuMoves[gnuSuggestionsCpt], 5-strlen(strchr(gnuMoves[gnuSuggestionsCpt], ' ')));
 
-                    //gtp_printf("\ngnuMove\n");
+                    //gtp_printf("= Z\ngnuMove\n");
                     //gtp_printf(gnuMoves[gnuSuggestionsCpt]);
                     //strlen(gnuMoves[gnuSuggestionsCpt]);
                     //printf(strlen(gnuMoves[gnuSuggestionsCpt]));
                     //printf(1);printf("\n");
-                    //gtp_printf("\ngnuSuggestions\n");
+                    //gtp_printf("= Z\ngnuSuggestions\n");
                     //gtp_printf(gnuSuggestions);
 
                     gnuSuggestionsCpt ++; // validates the current move as being coordinates
@@ -1098,27 +1098,27 @@ int askGGNU(int *i, int *j, int color) {
                        strncpy (gnuSuggestions, strchr(gnuSuggestions, ' ')+1, strlen(strchr(gnuSuggestions, ' ')));
                     } else {
                         isContinue = false;
-                        //gtp_printf("\nno more GNU suggestions\n");
+                        //gtp_printf("= Z\nno more GNU suggestions\n");
                         //gtp_printf(gnuSuggestions);
                     }
 
                 } else {
                     isContinue = false;
 
-                    /*gtp_printf("\nnot coords\n");
+                    /*gtp_printf("= Z\nnot coords\n");
                     gtp_printf(gnuMoves[gnuSuggestionsCpt]);
                     gtp_printf(gnuSuggestions);*/
                 }
                 isContinue = isContinue && strlen(gnuSuggestions) > 4;
             }
         }
-        //gtp_printf("\nend of loop on GNU suggestions %d\n",gnuSuggestionsCpt);
+        //gtp_printf("= Z\nend of loop on GNU suggestions %d\n",gnuSuggestionsCpt);
         status2 = pclose(fp2);
 
         // 4) ask leela for move suggestions
 		getLeelaTopMovecmd(cmdLeelaOpinions,color,NULL, false);
-        //gtp_printf("\nasking leela------------------------------------------------------------------------------\n");
-        //gtp_printf("? oups\n\n");
+        //gtp_printf("= Z\nasking leela------------------------------------------------------------------------------\n");
+        //gtp_printf("= Z? oups\n\n");
         //gtp_printf(cmdLeelaOpinions);
 
 		fp3 = popen(cmdLeelaOpinions, "r");
@@ -1129,10 +1129,10 @@ int askGGNU(int *i, int *j, int color) {
             strncpy (leelaSuggestions, path4 + 1, strlen(path4)-1); // remove the "= " from the answer -> "R3 25.01 P3 25.00 Q16 25.00 B2 19.11"
 
             if(leelaSuggestions == strchr(leelaSuggestions, ' ')){
-                //gtp_printf("\nremoving heading spaces\n");
+                //gtp_printf("= Z\nremoving heading spaces\n");
                 strncpy (leelaSuggestions, leelaSuggestions + 1, strlen(leelaSuggestions)-1); // remove the "= " from the answer -> "R3 25.01 P3 25.00 Q16 25.00 B2 19.11"
             }
-            //gtp_printf("\nleelaSuggestion\n");
+            //gtp_printf("= Z\nleelaSuggestion\n");
             //gtp_printf(leelaSuggestions);
 
             //strncpy(leelaMoves[leelaSuggestionsCpt] , "\0",1);
@@ -1146,12 +1146,12 @@ int askGGNU(int *i, int *j, int color) {
                 // TODO replace space by \0 in leelaMoves[leelaSuggestionsCpt]
                 //strncpy (leelaMoves[leelaSuggestionsCpt], leelaMoves[leelaSuggestionsCpt], 5-strlen(strchr(leelaMoves[leelaSuggestionsCpt], ' ')));
 
-                //gtp_printf("\nleelaMove\n");
+                //gtp_printf("= Z\nleelaMove\n");
                 //gtp_printf(leelaMoves[leelaSuggestionsCpt]);
                 //strlen(leelaMoves[leelaSuggestionsCpt]);
                 //printf(strlen(leelaMoves[leelaSuggestionsCpt]));
                 //printf(1);printf("\n");
-                //gtp_printf("\nleelaSuggestions\n");
+                //gtp_printf("= Z\nleelaSuggestions\n");
                 //gtp_printf(leelaSuggestions);
 
                 if(NULL != strchr(leelaSuggestions, ':')){
@@ -1160,9 +1160,9 @@ int askGGNU(int *i, int *j, int color) {
                         spaceCharInMove = strchr(leelaSuggestions, '%');
                         if(NULL != spaceCharInMove){
                             *spaceCharInMove = '\0';
-                            //gtp_printf("\nprobability AAA :\n");
+                            //gtp_printf("= Z\nprobability AAA :\n");
                             //gtp_printf(leelaSuggestions);
-                            //gtp_printf("float value : %3.2f\n" ,atof(leelaSuggestions));
+                            //gtp_printf("= Zfloat value : %3.2f\n" ,atof(leelaSuggestions));
                             leelaMovesValue[leelaSuggestionsCpt] = atof(leelaSuggestions);
                             if(leelaMovesValue[leelaSuggestionsCpt] > leelaMovesValue[leelaBest]) {
                                 leelaBest = leelaSuggestionsCpt;
@@ -1172,25 +1172,25 @@ int askGGNU(int *i, int *j, int color) {
 
                             leelaSuggestionsCpt ++; // validates the current move as being coordinates
                         } else {
-                            /*gtp_printf("\nno probability for this move\n");
+                            /*gtp_printf("= Z\nno probability for this move\n");
                             gtp_printf(leelaSuggestions);*/
                         }
                     }
                 } else {
                     isContinue = false;
-                    //gtp_printf("\nno : in leela suggestion\n");
+                    //gtp_printf("= Z\nno : in leela suggestion\n");
                     //gtp_printf(leelaMoves[leelaSuggestionsCpt]);
                 }
 
             } else {
                 //isContinue = false;
 
-               //gtp_printf("\nnot coords\n");
+               //gtp_printf("= Z\nnot coords\n");
                 //gtp_printf(leelaMoves[leelaSuggestionsCpt]);
             }
 
         }
-        //gtp_printf("\nend of loop on Leela suggestions %d\n",leelaSuggestionsCpt);
+        //gtp_printf("= Z\nend of loop on Leela suggestions %d\n",leelaSuggestionsCpt);
         status3 = pclose(fp3);
         // 5) take GNU's best suggestion that is in leela scope
         int gnuIndex =0;
@@ -1198,22 +1198,26 @@ int askGGNU(int *i, int *j, int color) {
             int leelaIndex =0;
             for(leelaIndex=0 ;leelaIndex <leelaSuggestionsCpt && gnuMovesValue[gnuIndex] <0;leelaIndex++) {
                 if(strcmp(gnuMoves[gnuIndex], leelaMoves[leelaIndex]) ==0){
-                    //gtp_printf("found value of %s : %3.2f\n" ,gnuMoves[gnuIndex], leelaMovesValue[leelaIndex]);
+                    //gtp_printf("= Zfound value of %s : %3.2f\n" ,gnuMoves[gnuIndex], leelaMovesValue[leelaIndex]);
                     gnuMovesValue[gnuIndex] = leelaMovesValue[leelaIndex];
                     if(gnuMovesValue[gnuIndex] > gnuMovesValue[gnuBest]) {
-                        //gtp_printf("new best from GNU!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+                        //gtp_printf("= Znew best from GNU!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
                         gnuBest = gnuIndex;
                         if(gnuMovesValue[gnuBest] >= leelaMovesValue[leelaBest]/2.){
-                            //gtp_printf("and its playable!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+                            //gtp_printf("= Zand its playable!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
 
                         }
                     }
                 }
             }
         }
+        //gtp_printf("= Z= Ado we have a leela estimation for GNU best move ?\n");
 
-        if(gnuMovesValue[gnuBest] <0){
-            //gtp_printf("= \nasking leela AFTER------------------------------------------------------------------------------\n");
+        if(gnuMovesValue[gnuBest] <0 && current_move_num > 60){ // prevent shallow search after 60 moves
+            gnuMovesValue[gnuBest]=0;
+            //gtp_printf("= Z= \nasking leela AFTER------------------------------------------------------------------------------\n");
+        } else if(gnuMovesValue[gnuBest] <0){
+            //gtp_printf("= Z= Aasking leela AFTER------------------------------------------------------------------------------\n");
             // if no match between GNU and Leela
             // 6) ask leela opinion on GNU's suggestions
             char cmdLeelaOpinionsAfter[5000] = "printf \"";
@@ -1226,10 +1230,10 @@ int askGGNU(int *i, int *j, int color) {
             strcat(gnufirst,path1);
             getLeelaTopMovecmd(cmdLeelaOpinionsAfter,OTHER_COLOR(color),gnufirst, true);
 
-            //gtp_printf("= cmd AFTER %s ",cmdLeelaOpinionsAfter);
+            //gtp_printf("= Z= cmd AFTER %s ",cmdLeelaOpinionsAfter);
 
             fp4 = popen(cmdLeelaOpinionsAfter, "r");
-            //gtp_printf("\n\n");
+            //gtp_printf("= Z\n\n");
 
 
             bool isContinue = true;
@@ -1237,15 +1241,15 @@ int askGGNU(int *i, int *j, int color) {
                 strncpy (leelaSuggestionsAFTER, path6 + 1, strlen(path6)-1); // remove the "= " from the answer -> "R3 25.01 P3 25.00 Q16 25.00 B2 19.11"
 
                 if(leelaSuggestionsAFTER == strchr(leelaSuggestionsAFTER, ' ')){
-                    //gtp_printf("\nremoving heading spaces\n");
+                    //gtp_printf("= Z\nremoving heading spaces\n");
                     strncpy (leelaSuggestionsAFTER, leelaSuggestionsAFTER + 1, strlen(leelaSuggestionsAFTER)-1); // remove the "= " from the answer -> "R3 25.01 P3 25.00 Q16 25.00 B2 19.11"
                 }
-                //gtp_printf("= \nleelaSuggestionAFTER\n");
-                //gtp_printf("= XXX %s\n",leelaSuggestionsAFTER);
+                //gtp_printf("= Z= \nleelaSuggestionAFTER\n");
+                //gtp_printf("= Z= XXX %s\n",leelaSuggestionsAFTER);
 
                 strncpy (leelaMovesAFTER[leelaSuggestionsCptAFTER], leelaSuggestionsAFTER , 4);
 
-                //gtp_printf("= XXXmv %s\n",leelaMovesAFTER[leelaSuggestionsCptAFTER]);
+                //gtp_printf("= Z= XXXmv %s\n",leelaMovesAFTER[leelaSuggestionsCptAFTER]);
                 char *spaceCharInMove = strchr(leelaMovesAFTER[leelaSuggestionsCptAFTER], ' ');
                 if(NULL != spaceCharInMove){
                     *spaceCharInMove = '\0';
@@ -1254,12 +1258,12 @@ int askGGNU(int *i, int *j, int color) {
                     // TODO replace space by \0 in leelaMoves[leelaSuggestionsCpt]
                     //strncpy (leelaMoves[leelaSuggestionsCpt], leelaMoves[leelaSuggestionsCpt], 5-strlen(strchr(leelaMoves[leelaSuggestionsCpt], ' ')));
 
-                    //gtp_printf("\nleelaMove\n");
+                    //gtp_printf("= Z\nleelaMove\n");
                     //gtp_printf(leelaMoves[leelaSuggestionsCpt]);
                     //strlen(leelaMoves[leelaSuggestionsCpt]);
                     //printf(strlen(leelaMoves[leelaSuggestionsCpt]));
                     //printf(1);printf("\n");
-                    //gtp_printf("\nleelaSuggestions\n");
+                    //gtp_printf("= Z\nleelaSuggestions\n");
                     //gtp_printf(leelaSuggestions);
 
 
@@ -1269,9 +1273,9 @@ int askGGNU(int *i, int *j, int color) {
                             spaceCharInMove = strchr(leelaSuggestionsAFTER, '%');
                             if(NULL != spaceCharInMove){
                                 *spaceCharInMove = '\0';
-                                //gtp_printf("\nprobability:\n");
+                                //gtp_printf("= Z\nprobability:\n");
                                 //gtp_printf(leelaSuggestionsAFTER);
-                                //gtp_printf("float value : %3.2f\n" ,atof(leelaSuggestionsAFTER));
+                                //gtp_printf("= Zfloat value : %3.2f\n" ,atof(leelaSuggestionsAFTER));
                                 leelaMovesValueAFTER[leelaSuggestionsCptAFTER] = atof(leelaSuggestionsAFTER);
                                 if(leelaMovesValueAFTER[leelaSuggestionsCptAFTER] > leelaMovesValueAFTER[leelaBestAFTER]) {
                                     leelaBestAFTER = leelaSuggestionsCptAFTER;
@@ -1281,25 +1285,25 @@ int askGGNU(int *i, int *j, int color) {
 
                                 leelaSuggestionsCptAFTER ++; // validates the current move as being coordinates
                             } else {
-                                //gtp_printf("= \nno probability for this moveAFTER\n");
-                                //gtp_printf("= XXX %s\n",leelaSuggestionsAFTER);
+                                //gtp_printf("= Z= \nno probability for this moveAFTER\n");
+                                //gtp_printf("= Z= XXX %s\n",leelaSuggestionsAFTER);
                             }
                         }
                     } else {
                         isContinue = false;
-                        //gtp_printf("= \nno : in leela suggestionAFTER\n");
-                        //gtp_printf("= XXX %s\n",leelaMovesAFTER[leelaSuggestionsCptAFTER]);
+                        //gtp_printf("= Z= \nno : in leela suggestionAFTER\n");
+                        //gtp_printf("= Z= XXX %s\n",leelaMovesAFTER[leelaSuggestionsCptAFTER]);
                     }
 
                 } else {
                     //isContinue = false;
 
-                    //gtp_printf("= \nnot coordsAFTER\n");
-                    //gtp_printf("= XXZ %s\n",leelaMovesAFTER[leelaSuggestionsCptAFTER]);
+                    //gtp_printf("= Z= \nnot coordsAFTER\n");
+                    //gtp_printf("= Z= XXZ %s\n",leelaMovesAFTER[leelaSuggestionsCptAFTER]);
                 }
 
             }
-            //gtp_printf("= \nend of loop on Leela suggestions AFTER %d\n",leelaSuggestionsCptAFTER);
+            //gtp_printf("= Aend of loop on Leela suggestions AFTER %d\n",leelaSuggestionsCptAFTER);
             status4 = pclose(fp4);
             gnuMovesValue[gnuBest]=100-leelaMovesValueAFTER[leelaBestAFTER];
         }
@@ -1335,7 +1339,7 @@ int askGGNU(int *i, int *j, int color) {
 		// path1 contains the chosen move like "A1"
 		// str1 contains the chosen move like "B A1"
 		gtp_decode_move(str1, &color, i, j);
-		//gtp_printf("\ncouc %i %i %i\n", color, *i, *j);
+		//gtp_printf("= Z\ncouc %i %i %i\n", color, *i, *j);
 	}
 	/*if (!legal_move(i, j, color))
 		return gtp_failure("illegal move");
