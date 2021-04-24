@@ -1316,8 +1316,8 @@ int askGGNU(int *i, int *j, int color) {
 
         int behaviourThreshold = current_move_num > 10 ? 50 : 5; // under that % for the best leela move, we make an extra effort to catch up
 
-
-        if( (leelaMovesValue[leelaBest] > behaviourThreshold && (gnuMovesValue[gnuBest] >= leelaMovesValue[leelaBest]/3. && gnuMovesValue[gnuBest] >= leelaMovesValue[leelaBest]-30)) ||
+        // always take GNU move
+        if( true || (leelaMovesValue[leelaBest] > behaviourThreshold && (gnuMovesValue[gnuBest] >= leelaMovesValue[leelaBest]/3. && gnuMovesValue[gnuBest] >= leelaMovesValue[leelaBest]-30)) ||
             (leelaMovesValue[leelaBest] < behaviourThreshold && (gnuMovesValue[gnuBest] >= leelaMovesValue[leelaBest]*3/4. && gnuMovesValue[gnuBest] >= 1 ))){
             //gtp_printf("= GNU move is OK %s : %3.2f  leela said %s : %3.2f\n",gnuMoves[gnuBest],gnuMovesValue[gnuBest],leelaMoves[leelaBest],leelaMovesValue[leelaBest]);
             strncpy(path1,"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0",33);
