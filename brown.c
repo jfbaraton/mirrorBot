@@ -54,6 +54,7 @@ float komi = -3.14;
  * in the upper left corner.
  */
 static int board[MAX_BOARD * MAX_BOARD];
+static int segmented_board[MAX_BOARD * MAX_BOARD]; // for all playable moves, compute the distance to the closest stone
 static int game_moves[10*MAX_BOARD * MAX_BOARD];
 static int game_moves_color[10*MAX_BOARD * MAX_BOARD];
 
@@ -411,6 +412,7 @@ void play_move(int i, int j, int color)
 /* Generate a move. */
 void generate_move(int *i, int *j, int color)
 {
+  //gtp_printf("= ZOK ENTER generate_move");
   int moves[MAX_BOARD * MAX_BOARD];
   int num_moves = 0;
   int move;
@@ -420,30 +422,73 @@ void generate_move(int *i, int *j, int color)
   int GNUi, GNUj;
 
   memset(moves, 0, sizeof(moves));
+  //gtp_printf("= ZOK memset");
   for (ai = 0; ai < board_size; ai++)
     for (aj = 0; aj < board_size; aj++) {
       /* Consider moving at (ai, aj) if it is legal and not suicide. */
       if (legal_move(ai, aj, color)
 	  && !suicide(ai, aj, color)) {
-	/* Further require the move not to be suicide for the opponent... */
-	if (!suicide(ai, aj, OTHER_COLOR(color)))
-	  moves[num_moves++] = POS(ai, aj);
-	else {
-	  /* ...however, if the move captures at least one stone,
-           * consider it anyway.
-	   */
-	  for (k = 0; k < 4; k++) {
-	    int bi = ai + deltai[k];
-	    int bj = aj + deltaj[k];
-	    if (on_board(bi, bj) && get_board(bi, bj) == OTHER_COLOR(color)) {
-	      moves[num_moves++] = POS(ai, aj);
-	      break;
-	    }
+		  segmented_board[POS(ai,aj)] = -1; // legal moves have -1, to be replaced with the distance to closest illegal move
+		/* Further require the move not to be suicide for the opponent... */
+		if (!suicide(ai, aj, OTHER_COLOR(color)))
+		  moves[num_moves++] = POS(ai, aj);
+		else {
+		  /* ...however, if the move captures at least one stone,
+			   * consider it anyway.
+		   */
+		  for (k = 0; k < 4; k++) {
+			int bi = ai + deltai[k];
+			int bj = aj + deltaj[k];
+			if (on_board(bi, bj) && get_board(bi, bj) == OTHER_COLOR(color)) {
+			  moves[num_moves++] = POS(ai, aj);
+			  break;
+			}
+		  }
+		}
+      } else {
+		  // illegal move
+		  segmented_board[POS(ai,aj)] = 0; // legal moves have 0 distance to illegal moves
 	  }
-	}
-      }
     }
 
+	// segmentation
+	
+	//gtp_printf("= ZOK before segmentation");
+	int is_seg_change = 1; // 1 if the segmentation pass caused a change
+	int current_distance = -1;
+	while(is_seg_change){
+		is_seg_change = 0;
+		current_distance++;
+		//gtp_printf("= ZOK before segmentation iteration %d\n\n",current_distance);
+		
+		for (ai = 0; ai < board_size; ai++) {
+			//gtp_printf("\n");
+			for (aj = 0; aj < board_size; aj++) {
+				//gtp_printf("%d ",segmented_board[POS(ai,aj)]);
+				if(segmented_board[POS(ai,aj)] == current_distance){
+					// check all 4 neighbors for being uncalculated (-1)
+					if(ai > 0 && segmented_board[POS(ai-1,aj)] == -1) {
+						is_seg_change = 1;
+						segmented_board[POS(ai-1,aj)] = current_distance+1;
+					}
+					if(ai < board_size-1 && segmented_board[POS(ai+1,aj)] == -1) {
+						is_seg_change = 1;
+						segmented_board[POS(ai+1,aj)] = current_distance+1;
+					}
+					if(aj > 0 && segmented_board[POS(ai,aj-1)] == -1) {
+						is_seg_change = 1;
+						segmented_board[POS(ai,aj-1)] = current_distance+1;
+					}
+					if(ai < board_size-1 && segmented_board[POS(ai,aj+1)] == -1) {
+						is_seg_change = 1;
+						segmented_board[POS(ai,aj+1)] = current_distance+1;
+					}
+				}
+			}
+		}
+	}
+
+  //gtp_printf("\n\n\n\n= ZOK AFTER segmentation\n\n");
   /* Choose one of the considered moves randomly with uniform
    * distribution. (Strictly speaking the moves with smaller 1D
    * coordinates tend to have a very slightly higher probability to be
@@ -458,8 +503,8 @@ void generate_move(int *i, int *j, int color)
 	} else {
 		previ = I(game_moves[current_move_num-1]);
 		prevj = J(game_moves[current_move_num-1]);
-		previ = board_size-1-previ;
-		prevj = board_size-1-prevj;
+		//previ = board_size-1-previ; // for mirror bot
+		//prevj = board_size-1-prevj; // for mirror bot
 		if (false && GNU_FIRST_MOVE == 0 && legal_move(previ, prevj, color)
 			&& !suicide(previ, prevj, color)){
 			move = POS(previ,prevj);
@@ -946,6 +991,9 @@ int askGGNU(int *i, int *j, int color) {
 	int status2;
 	int status3;
 	int status4;
+	int leelaSuggestioni = 0;
+	int leelaSuggestionj = 0;
+	
 	char gnuSuggestions[5000]          = "= R3 25.01 P3 25.00 Q16 25.00 B2 19.11";
 	char leelaSuggestions[5000]          = "";
 	char leelaSuggestionsAFTER[5000]          = "";
@@ -954,6 +1002,7 @@ int askGGNU(int *i, int *j, int color) {
     int gnuSuggestionsCpt = 0;
     int leelaSuggestionsCpt = 0;
     int leelaSuggestionsCptAFTER = 0;
+    int leelaFarthest = -1;
     int leelaBest = 19;
     int leelaBest2 = 19;
     int leelaBest3 = 19;
@@ -961,11 +1010,14 @@ int askGGNU(int *i, int *j, int color) {
     int leelaBest5 = 19;
     int leelaBestAFTER = 0;
     int gnuBest = 0;
+    int max_dist = 0;
+    int dist = 0;
 	char gnuMoves[20][5] = {"\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0"};
 	char leelaMoves[20][5] = {"\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0"};
 	char leelaMovesAFTER[20][5] = {"\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0"};
 	float gnuMovesValue[20] = {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1};
 	float leelaMovesValue[20] = {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1};
+	int leelaMovesAsPos[20] = {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1}; // POS coordinates of leela suggestions
 	float leelaMovesValueAFTER[20] = {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1};
 	char path0[PATH_MAX];
 	char path1[PATH_MAX];
@@ -1166,36 +1218,69 @@ int askGGNU(int *i, int *j, int color) {
                             *spaceCharInMove = '\0';
                             //gtp_printf("= Z\nprobability AAA :\n");
                             //gtp_printf(leelaSuggestions);
+                            
+                            // translate leela suggestion into coordinates
+                            strncpy(path1,"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0",33);
+							strncpy(path1,leelaMoves[leelaSuggestionsCpt],5);
+
+							strncpy(str1,"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0",33);
+							if(color == BLACK){
+								strcat(str1,"B ");
+							} else {
+								strcat(str1,"W ");
+							}
+							strcat(str1,path1);
+							// path1 contains the chosen move like "A1"
+							// str1 contains the chosen move like "B A1"
+							//gtp_printf("= Z probability %s :\n",str1);
+							gtp_decode_move(str1, &color, &leelaSuggestioni, &leelaSuggestionj);
+							leelaMovesAsPos[leelaSuggestionsCpt] = POS(leelaSuggestioni,leelaSuggestionj);
+                            // done translating leela suggestion into coordinates
+                            //gtp_printf("= Z\ndist ? :%d (%d,%d) %d\n",leelaSuggestionsCpt, leelaSuggestioni, leelaSuggestionj, leelaMovesAsPos[leelaSuggestionsCpt]);
+                            dist = segmented_board[leelaMovesAsPos[leelaSuggestionsCpt]];
+                            //gtp_printf("= Z dist : %d\n",dist);
+                            if(dist > max_dist) {
+								max_dist = dist;
+							}
+                            
                             leelaMovesValue[leelaSuggestionsCpt] = atof(leelaSuggestions);
                             int newBest = -1;
-                            if(leelaMovesValue[leelaSuggestionsCpt] > leelaMovesValue[leelaBest]) {
+                            if(leelaMovesValue[leelaSuggestionsCpt] > leelaMovesValue[leelaBest]) { // ordered based on score
+                                leelaBest = leelaSuggestionsCpt;
+							}
+                            if(leelaFarthest <0 || dist > segmented_board[leelaMovesAsPos[leelaFarthest]]) { // ordered based on distance
                                 newBest = 0;
                                 leelaBest5 = leelaBest4;
                                 leelaBest4 = leelaBest3;
                                 leelaBest3 = leelaBest2;
-                                leelaBest2 = leelaBest;
-                                leelaBest = leelaSuggestionsCpt;
-                            } else if(leelaMovesValue[leelaSuggestionsCpt] > leelaMovesValue[leelaBest2]) {
+                                leelaBest2 = leelaFarthest;
+                                leelaFarthest = leelaSuggestionsCpt;
+                            //} else if(leelaMovesValue[leelaSuggestionsCpt] > leelaMovesValue[leelaBest2]) { // ordered based on score
+                            } else if(leelaBest2 >=0 && dist > segmented_board[leelaMovesAsPos[leelaBest2]]) { // ordered based on distance
                                 newBest = 2;
                                 leelaBest5 = leelaBest4;
                                 leelaBest4 = leelaBest3;
                                 leelaBest3 = leelaBest2;
                                 leelaBest2 = leelaSuggestionsCpt;
-                            } else if(leelaMovesValue[leelaSuggestionsCpt] > leelaMovesValue[leelaBest3]) {
+                            //} else if(leelaMovesValue[leelaSuggestionsCpt] > leelaMovesValue[leelaBest3]) { // ordered based on score
+                            } else if(leelaBest3 >=0 && dist > segmented_board[leelaMovesAsPos[leelaBest3]]) { // ordered based on distance
                                  newBest = 3;
                                  leelaBest5 = leelaBest4;
                                  leelaBest4 = leelaBest3;
                                  leelaBest3 = leelaSuggestionsCpt;
-                            } else if(leelaMovesValue[leelaSuggestionsCpt] > leelaMovesValue[leelaBest4]) {
+                            //} else if(leelaMovesValue[leelaSuggestionsCpt] > leelaMovesValue[leelaBest4]) { // ordered based on score
+                            } else if(leelaBest4 >=0 && dist > segmented_board[leelaMovesAsPos[leelaBest4]]) { // ordered based on distance
                                 newBest = 4;
                                  leelaBest5 = leelaBest4;
                                  leelaBest4 = leelaSuggestionsCpt;
-                            } else if(leelaMovesValue[leelaSuggestionsCpt] > leelaMovesValue[leelaBest5]) {
+                            //} else if(leelaMovesValue[leelaSuggestionsCpt] > leelaMovesValue[leelaBest5]) { // ordered based on score
+                            } else if(leelaBest5 >=0 && dist > segmented_board[leelaMovesAsPos[leelaBest5]]) { // ordered based on distance
                                 newBest = 5;
                                  leelaBest5 = leelaSuggestionsCpt;
                             }
 
                             //gtp_printf("= Zfloat value (%d): %3.2f\n" ,newBest ,atof(leelaSuggestions));
+                            //gtp_printf("= Zfarthest (%d): %d = (%d,%d)\n" ,leelaFarthest ,leelaMovesAsPos[leelaFarthest], I(leelaMovesAsPos[leelaFarthest]), J(leelaMovesAsPos[leelaFarthest]));
                             //gtp_printf("= Ztop (0): %3.2f\n" ,leelaMovesValue[leelaBest]);
                            // gtp_printf("= Ztop (2): %3.2f\n" ,leelaMovesValue[leelaBest2]);
                             //gtp_printf("= Ztop (3): %3.2f\n" ,leelaMovesValue[leelaBest3]);
@@ -1351,34 +1436,51 @@ int askGGNU(int *i, int *j, int color) {
         int behaviourThreshold = 0; // under that % for the best leela move, we make an extra effort to catch up
         float acceptableLoss = .95f; // max 5% loss under leela best per move
 
-        if( (leelaMovesValue[leelaBest] > behaviourThreshold && (gnuMovesValue[gnuBest] >= leelaMovesValue[leelaBest]*acceptableLoss )) ||
-            (leelaMovesValue[leelaBest] < behaviourThreshold && (gnuMovesValue[gnuBest] >= leelaMovesValue[leelaBest]*3/4. && gnuMovesValue[gnuBest] >= 1 ))){
+        /*if( (leelaMovesValue[leelaBest] > behaviourThreshold && (gnuMovesValue[gnuBest] >= leelaMovesValue[leelaBest]*acceptableLoss )) ||
+            (leelaMovesValue[leelaBest] < behaviourThreshold && (gnuMovesValue[gnuBest] >= leelaMovesValue[leelaBest]*3/4. && gnuMovesValue[gnuBest] >= 1 ))){*/
+        if(current_move_num < 6) {
             //gtp_printf("= ZGNU move is OK %s : %3.2f  leela said %s : %3.2f\n",gnuMoves[gnuBest],gnuMovesValue[gnuBest],leelaMoves[leelaBest],leelaMovesValue[leelaBest]);
             strncpy(path1,"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0",33);
             strncpy(path1,gnuMoves[gnuBest],5);
         } else {
-            int chosenIdx = leelaBest;
+            int chosenIdx = leelaFarthest;
+            //gtp_printf("= Z default to farthest\n");
             int nextMoveCpt = 0;
-            if(leelaMovesValue[leelaBest2] >= leelaMovesValue[leelaBest]*acceptableLoss && leelaBest2 != leelaBest) {
-                nextMoveCpt++;
-                if(leelaMovesValue[leelaBest3] >= leelaMovesValue[leelaBest]*acceptableLoss && leelaBest2 != leelaBest3) {
-                    nextMoveCpt++;
-                    if(leelaMovesValue[leelaBest4] >= leelaMovesValue[leelaBest]*acceptableLoss && leelaBest3 != leelaBest4) {
-                        nextMoveCpt++;
-                        if(leelaMovesValue[leelaBest5] >= leelaMovesValue[leelaBest]*acceptableLoss && leelaBest4 != leelaBest5) {
-                            nextMoveCpt++;
-                            chosenIdx = leelaBest5;
-                        } else {
-                            chosenIdx = leelaBest4;
-                        }
-                    } else {
-                        chosenIdx = leelaBest3;
-                    }
-                } else {
-                    chosenIdx = leelaBest2;
-                }
-
-            }
+            // we want disFactor = 1 (100%) for max_dist and 0.95 (95%) for dist 1 (mini)
+            //float distFactor = segmented_board[leelaMovesAsPos[leelaBest2]]/max_dist; 
+            float distFactor = 1.f; 
+            if(leelaMovesValue[leelaFarthest]*distFactor < leelaMovesValue[leelaBest]*acceptableLoss && leelaBest2 != leelaBest) {
+				nextMoveCpt++;
+				chosenIdx = leelaBest2;
+				//gtp_printf("= Z swap to leelaBest2\n");
+				if(leelaMovesValue[leelaBest2]*distFactor < leelaMovesValue[leelaBest]*acceptableLoss && leelaBest2 != leelaBest) {
+					chosenIdx = leelaBest3;
+					nextMoveCpt++;
+					//gtp_printf("= Z swap to leelaBest3\n");
+					//distFactor = segmented_board[leelaMovesAsPos[leelaBest3]]/max_dist;
+					distFactor = 1.f; 
+					if(leelaMovesValue[leelaBest3]*distFactor < leelaMovesValue[leelaBest]*acceptableLoss && leelaBest2 != leelaBest3) {
+						chosenIdx = leelaBest4;
+						nextMoveCpt++;
+						//distFactor = segmented_board[leelaMovesAsPos[leelaBest4]]/max_dist;
+						distFactor = 1.f; 
+						//gtp_printf("= Z swap to leelaBest4\n");
+						if(leelaMovesValue[leelaBest4]*distFactor < leelaMovesValue[leelaBest]*acceptableLoss && leelaBest3 != leelaBest4) {
+							chosenIdx = leelaBest5;
+							nextMoveCpt++;
+							//distFactor = segmented_board[leelaMovesAsPos[leelaBest5]]/max_dist;
+							distFactor = 1.f; 
+							
+							//gtp_printf("= Z swap to leelaBest5\n");
+							if(leelaMovesValue[leelaBest5]*distFactor < leelaMovesValue[leelaBest]*acceptableLoss && leelaBest4 != leelaBest5) {
+								nextMoveCpt++;
+								chosenIdx = leelaBest;
+								//gtp_printf("= Z swap to leelaBest\n");
+							}
+						}
+					}
+				}
+			}
             //gtp_printf("= ZLeela move (%d) %s : %3.2f (>= %3.2f) because GNU said %s : %3.2f\n",nextMoveCpt,leelaMoves[chosenIdx],leelaMovesValue[chosenIdx],leelaMovesValue[leelaBest]*acceptableLoss,gnuMoves[gnuBest],gnuMovesValue[gnuBest]);
             strncpy(path1,"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0",33);
             strncpy(path1,leelaMoves[chosenIdx],5);
@@ -1386,6 +1488,7 @@ int askGGNU(int *i, int *j, int color) {
         // 7a) take GNU's best suggestion
         // 7b) take leela's suggestion that is the closest and above GNU's best suggestion
 
+        strncpy(str1,"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0",33);
 		if(color == BLACK){
 			strcat(str1,"B ");
 		} else {
