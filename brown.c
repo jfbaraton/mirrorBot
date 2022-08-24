@@ -57,6 +57,7 @@ static int board[MAX_BOARD * MAX_BOARD];
 static int segmented_board[MAX_BOARD * MAX_BOARD]; // for all playable moves, compute the distance to the closest stone
 static int game_moves[10*MAX_BOARD * MAX_BOARD];
 static int game_moves_color[10*MAX_BOARD * MAX_BOARD];
+int TOPLIST_MAX_LENGTH = 20;
 
 /* Stones are linked together in a circular list for each string. */
 static int next_stone[MAX_BOARD * MAX_BOARD];
@@ -893,10 +894,19 @@ void getLeelaTopMovecmd(char *s, int genmove_color, char *extra_move, bool is_sh
 	//char gamemovesSTR[5000] = "play B D4\\nplay W Q16\\nplay B D17\\nplay W Q3\\nplay B R5\\n";
 	//char cmd[5000] = "quit\\n\" | /home/jeff/Documents/go/gnugo/interface/gnugo --mode gtp --quiet | grep \"^= [a-zA-Z]\" | cat";
 	//char cmd[5000] = "quit\\n\" | (/home/jeff/Documents/go/leela_zero_latest/build/leelaz -g --noponder -w /home/jeff/Documents/go/leela_zero_latest/LeelaMaster_GXAA.txt --resignpct 1 --playouts 4  3>&1 1>&2- 2>&3- ) | grep \"[A-Z][1-9][ 1-9]\" | cat";
+	// computation times with CPUONLY is around 2s for 100po
+	// 50po =    11s
+	// 250po =   14s
+	// 850po =   25s
+	// 2250po =  48s
+	
 	char shallow_cmd[5000] =
-	            "quit\\n\" | (/home/jeff/Documents/go/leela_zero_latest/build/leelaz -g --noponder -w /home/jeff/Documents/go/leela_zero_latest/LeelaMaster_GXAA.txt --resignpct 1 --playouts 50  2>&1 ) | grep \"[A-Z][1-9][ 1-9]\" | cat";
+	            //"quit\\n\" | (/home/jeff/Documents/go/leela_zero_latest/build/leelaz -g --noponder -w /home/jeff/Documents/go/leela_zero_latest/LeelaMaster_GXAA.txt --resignpct 1 --playouts 50  2>&1 ) | grep \"[A-Z][1-9][ 1-9]\" | cat";
+	            "quit\\n\" | (/home/jeff/Documents/go/leela_zero_latest/build/leelaz -g --noponder -w /home/jeff/Documents/go/leela_zero_latest/best-network --resignpct 1 --playouts 50  2>&1 ) | grep \"[A-Z][1-9][ 1-9]\" | cat";
+	            "quit\\n\" | (/home/jeff/Documents/go/KataGo22/KataGo/cpp/katago gtp -model '/home/jeff/Documents/go/KataGo22/KataGo/cpp/model.txt' -config 'gtp.cfg' --resignpct 1 --playouts 50  2>&1 ) | grep \"[A-Z][1-9][ 1-9]\" | cat";
 	char deep_cmd[5000] =
-     	        "quit\\n\" | (/home/jeff/Documents/go/leela_zero_latest/build/leelaz -g --noponder -w /home/jeff/Documents/go/leela_zero_latest/LeelaMaster_GXAA.txt --resignpct 1 --playouts 250  2>&1 ) | grep \"[A-Z][1-9][ 1-9]\" | cat";
+     	        //"quit\\n\" | (/home/jeff/Documents/go/leela_zero_latest/build/leelaz -g --noponder -w /home/jeff/Documents/go/leela_zero_latest/LeelaMaster_GXAA.txt --resignpct 1 --playouts 750  2>&1 ) | grep \"[A-Z][1-9][ 1-9]\" | cat";
+     	        "quit\\n\" | (/home/jeff/Documents/go/leela_zero_latest/build/leelaz -g --noponder -w /home/jeff/Documents/go/leela_zero_latest/best-network --resignpct 1 --playouts 350  2>&1 ) | grep \"[A-Z][1-9][ 1-9]\" | cat";
 
     char * cmd;
     cmd = is_shallow ? shallow_cmd : deep_cmd;
@@ -968,6 +978,40 @@ void getLeelaTopMovecmd(char *s, int genmove_color, char *extra_move, bool is_sh
 	strcat(s,cmd);
 }
 
+// adds index at the appropriate place in the topList, based on distance
+// returns the rank or -1 if the distance's index was not inserted into the topList
+int putInOrder(int distance, int index, int leelaMovesAsPos[], float leelaMovesValue[], int topList[]) {
+	int i =0;
+    for(i=0 ;i < TOPLIST_MAX_LENGTH;i++) {
+		//gtp_printf("= Z putInOrder : %d %d\n",i, index);
+		if(
+			topList[i] <0 || 
+			distance > segmented_board[leelaMovesAsPos[topList[i]]] ||// bigger distances come first
+			(distance == segmented_board[leelaMovesAsPos[topList[i]]] && leelaMovesValue[index] > leelaMovesValue[topList[i]])
+			) { // for a same distance, bigger values come first
+			int j = 0;
+			for(j=i+1 ;j < TOPLIST_MAX_LENGTH;j++) {
+				topList[j] = topList[j-1];
+			}
+			topList[i] = index;
+			return i;
+		}
+	}
+	return -1;
+}
+
+int isSanSan(int moveAsPos) {
+	int i = I(moveAsPos);
+	int j = J(moveAsPos);
+	
+	if(i == 2  && j == 2 ) return 1;
+	if(i == 16 && j == 16) return 1;
+	if(i == 2  && j == 16) return 1;
+	if(i == 16 && j == 2 ) return 1;
+	
+	return 0;
+}
+
 int askGGNU(int *i, int *j, int color) {
     /* 1) ask for a GNU move
        2) if pass or resign => return
@@ -1002,15 +1046,11 @@ int askGGNU(int *i, int *j, int color) {
     int gnuSuggestionsCpt = 0;
     int leelaSuggestionsCpt = 0;
     int leelaSuggestionsCptAFTER = 0;
-    int leelaFarthest = -1;
     int leelaBest = 19;
-    int leelaBest2 = 19;
-    int leelaBest3 = 19;
-    int leelaBest4 = 19;
-    int leelaBest5 = 19;
+    int topList[20] = {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1};
     int leelaBestAFTER = 0;
     int gnuBest = 0;
-    int max_dist = 0;
+    int max_dist = 0; // most distant legal move on the board (from any illegal move)
     int dist = 0;
 	char gnuMoves[20][5] = {"\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0"};
 	char leelaMoves[20][5] = {"\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0","\0\0\0\0\0"};
@@ -1232,13 +1272,13 @@ int askGGNU(int *i, int *j, int color) {
 							strcat(str1,path1);
 							// path1 contains the chosen move like "A1"
 							// str1 contains the chosen move like "B A1"
-							//gtp_printf("= Z probability %s :\n",str1);
+							//gtp_printf("= Z probability %s :%s\n",str1,leelaSuggestions);
 							gtp_decode_move(str1, &color, &leelaSuggestioni, &leelaSuggestionj);
 							leelaMovesAsPos[leelaSuggestionsCpt] = POS(leelaSuggestioni,leelaSuggestionj);
                             // done translating leela suggestion into coordinates
                             //gtp_printf("= Z\ndist ? :%d (%d,%d) %d\n",leelaSuggestionsCpt, leelaSuggestioni, leelaSuggestionj, leelaMovesAsPos[leelaSuggestionsCpt]);
                             dist = segmented_board[leelaMovesAsPos[leelaSuggestionsCpt]];
-                            //gtp_printf("= Z dist : %d\n",dist);
+                            
                             if(dist > max_dist) {
 								max_dist = dist;
 							}
@@ -1248,6 +1288,10 @@ int askGGNU(int *i, int *j, int color) {
                             if(leelaMovesValue[leelaSuggestionsCpt] > leelaMovesValue[leelaBest]) { // ordered based on score
                                 leelaBest = leelaSuggestionsCpt;
 							}
+							//gtp_printf("= Z dist : %d\n",dist);
+							newBest = putInOrder(dist,leelaSuggestionsCpt, leelaMovesAsPos, leelaMovesValue, topList);// ordered based on distance, into topList
+							//gtp_printf("= Z NEXT : %d\n",dist);
+							/*
                             if(leelaFarthest <0 || dist > segmented_board[leelaMovesAsPos[leelaFarthest]]) { // ordered based on distance
                                 newBest = 0;
                                 leelaBest5 = leelaBest4;
@@ -1277,7 +1321,7 @@ int askGGNU(int *i, int *j, int color) {
                             } else if(leelaBest5 >=0 && dist > segmented_board[leelaMovesAsPos[leelaBest5]]) { // ordered based on distance
                                 newBest = 5;
                                  leelaBest5 = leelaSuggestionsCpt;
-                            }
+                            }*/
 
                             //gtp_printf("= Zfloat value (%d): %3.2f\n" ,newBest ,atof(leelaSuggestions));
                             //gtp_printf("= Zfarthest (%d): %d = (%d,%d)\n" ,leelaFarthest ,leelaMovesAsPos[leelaFarthest], I(leelaMovesAsPos[leelaFarthest]), J(leelaMovesAsPos[leelaFarthest]));
@@ -1330,7 +1374,8 @@ int askGGNU(int *i, int *j, int color) {
         }
         //gtp_printf("= Z= Ado we have a leela estimation for GNU best move ? %3.2f \n",gnuMovesValue[gnuBest]);
 
-        if(gnuMovesValue[gnuBest] <0 && current_move_num > 560){ // prevent shallow search after 60 moves
+        //if(gnuMovesValue[gnuBest] <0 && current_move_num > 560){ // prevent shallow search after 60 moves
+        if(true){ // prevent shallow search after 60 moves
             gnuMovesValue[gnuBest]=0;
             //gtp_printf("= Z= \nasking leela AFTER------------------------------------------------------------------------------\n");
         } else if(gnuMovesValue[gnuBest] <0){
@@ -1434,7 +1479,9 @@ int askGGNU(int *i, int *j, int color) {
 
         //int behaviourThreshold = current_move_num > 10 ? 50 : 5; // under that % for the best leela move, we make an extra effort to catch up
         int behaviourThreshold = 0; // under that % for the best leela move, we make an extra effort to catch up
-        float acceptableLoss = .95f; // max 5% loss under leela best per move
+        //float acceptableLoss = .95f; // max 5% loss under leela best per move
+        //float acceptableLoss = .85f; // max 15% loss under leela best per move
+        float acceptableLoss = .90f; // max 10% loss under leela best per move
 
         /*if( (leelaMovesValue[leelaBest] > behaviourThreshold && (gnuMovesValue[gnuBest] >= leelaMovesValue[leelaBest]*acceptableLoss )) ||
             (leelaMovesValue[leelaBest] < behaviourThreshold && (gnuMovesValue[gnuBest] >= leelaMovesValue[leelaBest]*3/4. && gnuMovesValue[gnuBest] >= 1 ))){*/
@@ -1443,12 +1490,28 @@ int askGGNU(int *i, int *j, int color) {
             strncpy(path1,"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0",33);
             strncpy(path1,gnuMoves[gnuBest],5);
         } else {
-            int chosenIdx = leelaFarthest;
+            int chosenIdx = leelaBest;
             //gtp_printf("= Z default to farthest\n");
             int nextMoveCpt = 0;
             // we want disFactor = 1 (100%) for max_dist and 0.95 (95%) for dist 1 (mini)
             //float distFactor = segmented_board[leelaMovesAsPos[leelaBest2]]/max_dist; 
             float distFactor = 1.f; 
+            int cptidx =0;
+			for(cptidx=0 ;cptidx < TOPLIST_MAX_LENGTH;cptidx++) {
+				if(
+				topList[cptidx] >=0 && 
+				leelaMovesValue[topList[cptidx]]*distFactor >= leelaMovesValue[leelaBest]*acceptableLoss && 
+				(current_move_num > 32  || 0 == isSanSan(leelaMovesAsPos[topList[cptidx]])) && // prevent early sansan
+				(current_move_num < 132 || leelaMovesValue[leelaBest]>50.f)                 && // quit playing light after move 132 when we are behind
+				(current_move_num < 200)                                                       // quit playing light after move 200
+				) {
+					nextMoveCpt = cptidx;
+					chosenIdx = topList[cptidx];
+					//gtp_printf("= Z swap to %d closest \n",cptidx);
+					break;
+				}
+			}
+            /*
             if(leelaMovesValue[leelaFarthest]*distFactor < leelaMovesValue[leelaBest]*acceptableLoss && leelaBest2 != leelaBest) {
 				nextMoveCpt++;
 				chosenIdx = leelaBest2;
@@ -1481,6 +1544,7 @@ int askGGNU(int *i, int *j, int color) {
 					}
 				}
 			}
+            */
             //gtp_printf("= ZLeela move (%d) %s : %3.2f (>= %3.2f) because GNU said %s : %3.2f\n",nextMoveCpt,leelaMoves[chosenIdx],leelaMovesValue[chosenIdx],leelaMovesValue[leelaBest]*acceptableLoss,gnuMoves[gnuBest],gnuMovesValue[gnuBest]);
             strncpy(path1,"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0",33);
             strncpy(path1,leelaMoves[chosenIdx],5);

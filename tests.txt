@@ -1,1 +1,4 @@
+// basic move generation
 printf "komi 6.5\nboardsize 19\nclear_board\nplay B K10\nplay W Q16\nplay B D17\nplay W Q3\nplay B R5\nplay W C15\nplay B O4\nplay W D4\nplay B Q4\ngenmove W\nquit\n" | /home/jeff/Documents/go/mirrorBot/tenuki
+
+printf "komi 6.5\nboardsize 19\nclear_board\nplay B Q16\nplay W D4\nplay B C16\nplay W Q4\nplay B F16\nplay W D10\nplay B O3\nplay W K4\nplay B R6\ngenmove W\nquit\n" | /home/jeff/Documents/go/mirrorBot/tenuki
