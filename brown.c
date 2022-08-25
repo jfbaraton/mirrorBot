@@ -902,11 +902,11 @@ void getLeelaTopMovecmd(char *s, int genmove_color, char *extra_move, bool is_sh
 	
 	char shallow_cmd[5000] =
 	            //"quit\\n\" | (/home/jeff/Documents/go/leela_zero_latest/build/leelaz -g --noponder -w /home/jeff/Documents/go/leela_zero_latest/LeelaMaster_GXAA.txt --resignpct 1 --playouts 50  2>&1 ) | grep \"[A-Z][1-9][ 1-9]\" | cat";
-	            "quit\\n\" | (/home/jeff/Documents/go/leela_zero_latest/build/leelaz -g --noponder -w /home/jeff/Documents/go/leela_zero_latest/best-network --resignpct 1 --playouts 50  2>&1 ) | grep \"[A-Z][1-9][ 1-9]\" | cat";
-	            "quit\\n\" | (/home/jeff/Documents/go/KataGo22/KataGo/cpp/katago gtp -model '/home/jeff/Documents/go/KataGo22/KataGo/cpp/model.txt' -config 'gtp.cfg' --resignpct 1 --playouts 50  2>&1 ) | grep \"[A-Z][1-9][ 1-9]\" | cat";
+	            "quit\\n\" | (/home/jeff/Documents/go/leela_zero_latest/build/leelaz -g --cpu-only --noponder -w /home/jeff/Documents/go/leela_zero_latest/best-network --resignpct 1 --playouts 5  2>&1 ) | grep \"[A-Z][1-9][ 1-9]\" | cat";
+	            //"quit\\n\" | (/home/jeff/Documents/go/KataGo22/KataGo/cpp/katago gtp -model '/home/jeff/Documents/go/KataGo22/KataGo/cpp/model.txt' -config 'gtp.cfg' --resignpct 1 --playouts 50  2>&1 ) | grep \"[A-Z][1-9][ 1-9]\" | cat";
 	char deep_cmd[5000] =
      	        //"quit\\n\" | (/home/jeff/Documents/go/leela_zero_latest/build/leelaz -g --noponder -w /home/jeff/Documents/go/leela_zero_latest/LeelaMaster_GXAA.txt --resignpct 1 --playouts 750  2>&1 ) | grep \"[A-Z][1-9][ 1-9]\" | cat";
-     	        "quit\\n\" | (/home/jeff/Documents/go/leela_zero_latest/build/leelaz -g --noponder -w /home/jeff/Documents/go/leela_zero_latest/best-network --resignpct 1 --playouts 350  2>&1 ) | grep \"[A-Z][1-9][ 1-9]\" | cat";
+     	        "quit\\n\" | (/home/jeff/Documents/go/leela_zero_latest/build/leelaz -g --cpu-only --noponder -w /home/jeff/Documents/go/leela_zero_latest/best-network --resignpct 1 --playouts 20  2>&1 ) | grep \"[A-Z][1-9][ 1-9]\" | cat";
 
     char * cmd;
     cmd = is_shallow ? shallow_cmd : deep_cmd;
