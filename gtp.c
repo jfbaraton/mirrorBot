@@ -216,6 +216,11 @@ gtp_mprintf(const char *fmt, ...)
       {
 	char *s = va_arg(ap, char *);
 	fputs(s, stdout);
+	if(IS_LOG_ACTIVE) {
+        //fprintf(fd, "OUT2\n[");
+        fputs(s, fd);
+        //fprintf(fd, "]\n");
+    }
 	break;
       }
       case 'm':
@@ -256,11 +261,11 @@ gtp_printf(const char *format, ...)
   va_start(ap, format);
   vfprintf(stdout, format, ap);
   
-	if(IS_LOG_ACTIVE) {
+	/*if(IS_LOG_ACTIVE) {
 		//fprintf(fd, "OUT3\n[");
 		vfprintf(fd,  format, ap);
 		//fprintf(fd, "]\n");
-	}
+	}*/
   va_end(ap);
 }
 
@@ -494,6 +499,10 @@ gtp_print_vertices(int n, int movei[], int movej[])
 	rj = movej[k];
       }
       gtp_printf("%c%d", 'A' + rj + (rj >= 8), gtp_boardsize - ri);
+	  if(IS_LOG_ACTIVE) {
+        fprintf(fd, "%c%d", 'A' + rj + (rj >= 8), gtp_boardsize - ri);
+        fprintf(fd, "\n");
+	  }
     }
   }
 }
