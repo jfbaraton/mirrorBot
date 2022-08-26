@@ -353,7 +353,7 @@ gtp_failure(const char *format, ...)
   if(IS_LOG_ACTIVE) {
 		fd = fopen("log.txt", "a");
 		va_start(ap, format);
-		vfprintf(fd,  "[FAIL]");
+		fprintf(fd,  "[FAIL]");
 		//fprintf(fd, "OUT3\n[");
 		vfprintf(fd,  format, ap);
 		//fprintf(fd, "]\n");
