@@ -258,7 +258,7 @@ gtp_printf(const char *format, ...)
   
 	if(IS_LOG_ACTIVE) {
 		fprintf(fd, "OUT3\n[");
-		fprintf(fd,  format, ap);
+		vfprintf(fd,  format, ap);
 		fprintf(fd, "]\n");
 	}
   va_end(ap);
@@ -305,7 +305,7 @@ gtp_success(const char *format, ...)
   vfprintf(stdout, format, ap);
   if(IS_LOG_ACTIVE) {
 		fprintf(fd, "OUTS\n[");
-		fprintf(fd,  format, ap);
+		vfprintf(fd,  format, ap);
 		fprintf(fd, "]\n");
 	}
   va_end(ap);
