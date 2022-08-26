@@ -195,9 +195,9 @@ gtp_mprintf(const char *fmt, ...)
 	int d = va_arg(ap, int);
 	fprintf(stdout, "%d", d);
     if(IS_LOG_ACTIVE) {
-        fprintf(fd, "\nOUT\n");
+        fprintf(fd, "OUT1\n[");
         fprintf(fd,  "%d", d);
-        fprintf(fd, "\n");
+        fprintf(fd, "]\n");
     }
 	break;
       }
@@ -206,9 +206,9 @@ gtp_mprintf(const char *fmt, ...)
 	double f = va_arg(ap, double); /* passed as double, not float */
 	fprintf(stdout, "%f", f);
     if(IS_LOG_ACTIVE) {
-        fprintf(fd, "\nOUT\n");
+        fprintf(fd, "OUT2\n[");
         fprintf(fd,  "%f", f);
-        fprintf(fd, "\n");
+        fprintf(fd, "]\n");
     }
 	break;
       }
@@ -257,9 +257,9 @@ gtp_printf(const char *format, ...)
   vfprintf(stdout, format, ap);
   
 	if(IS_LOG_ACTIVE) {
-		fprintf(fd, "\nOUT\n");
+		fprintf(fd, "OUT3\n[");
 		fprintf(fd,  format, ap);
-		fprintf(fd, "\n");
+		fprintf(fd, "]\n");
 	}
   va_end(ap);
 }
@@ -304,9 +304,9 @@ gtp_success(const char *format, ...)
   va_start(ap, format);
   vfprintf(stdout, format, ap);
   if(IS_LOG_ACTIVE) {
-		fprintf(fd, "\nOUTS\n");
+		fprintf(fd, "OUTS\n[");
 		fprintf(fd,  format, ap);
-		fprintf(fd, "\n");
+		fprintf(fd, "]\n");
 	}
   va_end(ap);
   return gtp_finish_response();
