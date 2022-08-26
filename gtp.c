@@ -69,6 +69,7 @@ static gtp_transform_ptr vertex_transform_output_hook = NULL;
  */
 static int current_id;
 
+FILE *fd;
 /* Read filehandle gtp_input linewise and interpret as GTP commands. */
 void
 gtp_main_loop(struct gtp_command commands[], FILE *gtp_input,
@@ -81,7 +82,6 @@ gtp_main_loop(struct gtp_command commands[], FILE *gtp_input,
   int n;
   int status = GTP_OK;
   
-  FILE *fd;
   if(IS_LOG_ACTIVE) {
 	fd = fopen("log.txt", "a");
   }
