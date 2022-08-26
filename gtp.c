@@ -113,9 +113,11 @@ gtp_main_loop(struct gtp_command commands[], FILE *gtp_input,
 	
     p = line;
     if(IS_LOG_ACTIVE) {
-        fprintf(fd, "IN\n");
+		fd = fopen("log.txt", "a");
+        fprintf(fd, "IN: ");
         fprintf(fd, p);
         //fprintf(fd, "\n");
+		fclose(fd);
     }
     /* Look for an identification number. */
     if (sscanf(p, "%d%n", &current_id, &n) == 1)
@@ -150,10 +152,6 @@ void
 gtp_internal_set_boardsize(int size)
 {
   gtp_boardsize = size;
-  
-  if(IS_LOG_ACTIVE) {
-	fd = fopen("log.txt", "a");
-  }
 }
 
 /* If you need to transform the coordinates on input or output, use
@@ -195,9 +193,11 @@ gtp_mprintf(const char *fmt, ...)
 	int d = va_arg(ap, int);
 	fprintf(stdout, "%d", d);
     if(IS_LOG_ACTIVE) {
+		fd = fopen("log.txt", "a");
         //fprintf(fd, "OUT1\n[");
         fprintf(fd,  "%d", d);
         //fprintf(fd, "]\n");
+		fclose(fd);
     }
 	break;
       }
@@ -206,9 +206,11 @@ gtp_mprintf(const char *fmt, ...)
 	double f = va_arg(ap, double); /* passed as double, not float */
 	fprintf(stdout, "%f", f);
     if(IS_LOG_ACTIVE) {
+		fd = fopen("log.txt", "a");
         //fprintf(fd, "OUT2\n[");
         fprintf(fd,  "%f", f);
         //fprintf(fd, "]\n");
+		fclose(fd);
     }
 	break;
       }
@@ -217,9 +219,11 @@ gtp_mprintf(const char *fmt, ...)
 	char *s = va_arg(ap, char *);
 	fputs(s, stdout);
 	if(IS_LOG_ACTIVE) {
+		fd = fopen("log.txt", "a");
         //fprintf(fd, "OUT2\n[");
         fputs(s, fd);
         //fprintf(fd, "]\n");
+		fclose(fd);
     }
 	break;
       }
@@ -262,9 +266,11 @@ gtp_printf(const char *format, ...)
   vfprintf(stdout, format, ap);
   
 	/*if(IS_LOG_ACTIVE) {
+		fd = fopen("log.txt", "a");
 		//fprintf(fd, "OUT3\n[");
 		vfprintf(fd,  format, ap);
 		//fprintf(fd, "]\n");
+		fclose(fd);
 	}*/
   va_end(ap);
 }
@@ -311,13 +317,15 @@ gtp_success(const char *format, ...)
   va_end(ap);
   
   
-  if(IS_LOG_ACTIVE) {
+  /*if(IS_LOG_ACTIVE) {
+		fd = fopen("log.txt", "a");
 	  va_start(ap, format);
 	  //fprintf(fd, "OUTS\n[");
 	  vfprintf(fd,  format, ap);
 	  //fprintf(fd, "]\n");
 	  va_end(ap);
-  }
+		fclose(fd);
+  }*/
   return gtp_finish_response();
 }
 
@@ -334,7 +342,7 @@ gtp_failure(const char *format, ...)
 		fprintf(fd, "\nFAIL\n");
 		fprintf(fd,  format, ap);
 		fprintf(fd, "\n");
-	}
+  }
   va_end(ap);
   return gtp_finish_response();
 }
