@@ -50,6 +50,8 @@
 #define WHITE        1
 #define BLACK        2
 
+#define IS_LOG_ACTIVE 1
+
 /* We need to keep track of the board size in order to be able to
  * convert between coordinate descriptions. We could also have passed
  * the board size in all calls needing it, but that would be
@@ -79,6 +81,11 @@ gtp_main_loop(struct gtp_command commands[], FILE *gtp_input,
   int n;
   int status = GTP_OK;
   
+  FILE *fd;
+  if(IS_LOG_ACTIVE) {
+	fd = fopen("log.txt", "a");
+  }
+	
   while (status == GTP_OK) {
     /* Read a line from gtp_input. */
     if (!fgets(line, GTP_BUFSIZE, gtp_input))
@@ -109,7 +116,11 @@ gtp_main_loop(struct gtp_command commands[], FILE *gtp_input,
     *p = 0;
 	
     p = line;
-
+    if(IS_LOG_ACTIVE) {
+        fprintf(fd, "\nIN\n");
+        fprintf(fd, p);
+        fprintf(fd, "\n");
+    }
     /* Look for an identification number. */
     if (sscanf(p, "%d%n", &current_id, &n) == 1)
       p += n;
@@ -183,12 +194,22 @@ gtp_mprintf(const char *fmt, ...)
       {
 	int d = va_arg(ap, int);
 	fprintf(stdout, "%d", d);
+    if(IS_LOG_ACTIVE) {
+        fprintf(fd, "\nOUT\n");
+        fprintf(fd,  "%d", d);
+        fprintf(fd, "\n");
+    }
 	break;
       }
       case 'f':
       {
 	double f = va_arg(ap, double); /* passed as double, not float */
 	fprintf(stdout, "%f", f);
+    if(IS_LOG_ACTIVE) {
+        fprintf(fd, "\nOUT\n");
+        fprintf(fd,  "%f", f);
+        fprintf(fd, "\n");
+    }
 	break;
       }
       case 's':
@@ -234,6 +255,12 @@ gtp_printf(const char *format, ...)
   va_list ap;
   va_start(ap, format);
   vfprintf(stdout, format, ap);
+  
+	if(IS_LOG_ACTIVE) {
+		fprintf(fd, "\nOUT\n");
+		fprintf(fd,  format, ap);
+		fprintf(fd, "\n");
+	}
   va_end(ap);
 }
 
@@ -271,10 +298,16 @@ gtp_finish_response()
 int
 gtp_success(const char *format, ...)
 {
+	
   va_list ap;
   gtp_start_response(GTP_SUCCESS);
   va_start(ap, format);
   vfprintf(stdout, format, ap);
+  if(IS_LOG_ACTIVE) {
+		fprintf(fd, "\nOUTS\n");
+		fprintf(fd,  format, ap);
+		fprintf(fd, "\n");
+	}
   va_end(ap);
   return gtp_finish_response();
 }
@@ -288,6 +321,11 @@ gtp_failure(const char *format, ...)
   gtp_start_response(GTP_FAILURE);
   va_start(ap, format);
   vfprintf(stdout, format, ap);
+  if(IS_LOG_ACTIVE) {
+		fprintf(fd, "\nFAIL\n");
+		fprintf(fd,  format, ap);
+		fprintf(fd, "\n");
+	}
   va_end(ap);
   return gtp_finish_response();
 }
