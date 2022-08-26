@@ -81,10 +81,6 @@ gtp_main_loop(struct gtp_command commands[], FILE *gtp_input,
   int i;
   int n;
   int status = GTP_OK;
-  
-  if(IS_LOG_ACTIVE) {
-	fd = fopen("log.txt", "a");
-  }
 	
   while (status == GTP_OK) {
     /* Read a line from gtp_input. */
@@ -154,6 +150,10 @@ void
 gtp_internal_set_boardsize(int size)
 {
   gtp_boardsize = size;
+  
+  if(IS_LOG_ACTIVE) {
+	fd = fopen("log.txt", "a");
+  }
 }
 
 /* If you need to transform the coordinates on input or output, use
