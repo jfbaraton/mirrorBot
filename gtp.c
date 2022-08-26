@@ -113,9 +113,9 @@ gtp_main_loop(struct gtp_command commands[], FILE *gtp_input,
 	
     p = line;
     if(IS_LOG_ACTIVE) {
-        fprintf(fd, "\nIN\n");
+        fprintf(fd, "IN\n");
         fprintf(fd, p);
-        fprintf(fd, "\n");
+        //fprintf(fd, "\n");
     }
     /* Look for an identification number. */
     if (sscanf(p, "%d%n", &current_id, &n) == 1)
@@ -303,12 +303,16 @@ gtp_success(const char *format, ...)
   gtp_start_response(GTP_SUCCESS);
   va_start(ap, format);
   vfprintf(stdout, format, ap);
-  if(IS_LOG_ACTIVE) {
-		//fprintf(fd, "OUTS\n[");
-		vfprintf(fd,  format, ap);
-		//fprintf(fd, "]\n");
-	}
   va_end(ap);
+  
+  
+  if(IS_LOG_ACTIVE) {
+	  va_start(ap, format);
+	  //fprintf(fd, "OUTS\n[");
+	  vfprintf(fd,  format, ap);
+	  //fprintf(fd, "]\n");
+	  va_end(ap);
+  }
   return gtp_finish_response();
 }
 
