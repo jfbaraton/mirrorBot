@@ -265,13 +265,13 @@ gtp_printf(const char *format, ...)
   va_start(ap, format);
   vfprintf(stdout, format, ap);
   
-	/*if(IS_LOG_ACTIVE) {
+	if(IS_LOG_ACTIVE) {
 		fd = fopen("log.txt", "a");
 		//fprintf(fd, "OUT3\n[");
 		vfprintf(fd,  format, ap);
 		//fprintf(fd, "]\n");
 		fclose(fd);
-	}*/
+	}
   va_end(ap);
 }
 
@@ -317,15 +317,16 @@ gtp_success(const char *format, ...)
   va_end(ap);
   
   
-  /*if(IS_LOG_ACTIVE) {
+  if(IS_LOG_ACTIVE) {
 		fd = fopen("log.txt", "a");
-	  va_start(ap, format);
+	  //va_start(ap, format);
 	  //fprintf(fd, "OUTS\n[");
-	  vfprintf(fd,  format, ap);
+	  fprintf(fd, "[SUCCESS]");
+	  //vfprintf(fd,  format, ap);
 	  //fprintf(fd, "]\n");
-	  va_end(ap);
+	  //va_end(ap);
 		fclose(fd);
-  }*/
+  }
   return gtp_finish_response();
 }
 
@@ -340,7 +341,7 @@ gtp_failure(const char *format, ...)
   vfprintf(stdout, format, ap);
   if(IS_LOG_ACTIVE) {
 		fprintf(fd, "\nFAIL\n");
-		fprintf(fd,  format, ap);
+		vfprintf(fd,  format, ap);
 		fprintf(fd, "\n");
   }
   va_end(ap);
@@ -508,8 +509,10 @@ gtp_print_vertices(int n, int movei[], int movej[])
       }
       gtp_printf("%c%d", 'A' + rj + (rj >= 8), gtp_boardsize - ri);
 	  if(IS_LOG_ACTIVE) {
+		fd = fopen("log.txt", "a");
         fprintf(fd, "%c%d", 'A' + rj + (rj >= 8), gtp_boardsize - ri);
         fprintf(fd, "\n");
+		fclose(fd);
 	  }
     }
   }
